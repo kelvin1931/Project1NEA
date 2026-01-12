@@ -1,17 +1,12 @@
-﻿using OpenTK.Windowing.Desktop;
+﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
-using OpenTK.Mathematics;
+using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
-namespace BuildObject
+namespace Project1
 {
-    public class Game : GameWindow
+    public class Game
     {
-        public Game(int width, int height, string name) : base(GameWindowSettings.Default, new NativeWindowSettings()
-        {
-            Size = new Vector2i(width, height),
-            Title = name
-        })
-        { }
-        
+
     }
 }
