@@ -92,6 +92,11 @@ namespace Project1NEA
                 Dispose(true);
                 GC.SuppressFinalize(this);
             }
+
+            public int GetAttribLocation(string attribName)
+            {
+                return GL.GetAttribLocation(Handle, attribName);
+            }
         }
     }
 }
