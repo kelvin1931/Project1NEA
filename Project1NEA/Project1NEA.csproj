@@ -11,6 +11,7 @@
     <None Remove="Rshader.frag" />
     <None Remove="shader.frag" />
     <None Remove="shader.vert" />
+    <None Remove="walling - Copy %283%29.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,6 +20,9 @@
     </Content>
     <Content Include="shader.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="walling - Copy (3).png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 

@@ -16,18 +16,19 @@ namespace Project1NEA
         private int VertexArrayObject;
         int ElementBufferObject;
         private Stopwatch _timer;
+
         float[] vertices =
             {
-             // positions        // colors
-             0.5f, -0.5f, 0.0f,  0.9f, 0.5f, 0.3f,   // bottom right
-            -0.5f, -0.5f, 0.0f,  0.3f, 0.9f, 0.5f,   // bottom left
-             0.0f,  0.5f, 0.0f,  0.5f, 0.3f, 0.9f    // top 
+            //Position          Texture coordinates
+            0.5f,  0.5f, 0.0f, 1.0f, 1.0f, // top right
+            0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // bottom right
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
+            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f  // top left
              };
-        
         uint[] indices =
-            { 0, 1, 2};
+            { 0, 1, 3, 1, 2, 3};
 
-        float[] texCoords =
+        public float[] texCoords =
             {
             0.0f, 0.0f, //lower left vertex
             1.0f, 0.0f, // lower right vertex
@@ -80,11 +81,18 @@ namespace Project1NEA
             GL.BufferData(BufferTarget.ArrayBuffer,vertices.Length * sizeof(float),vertices,BufferUsageHint.StaticDraw);
 
             // Link vertex attributes
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 0);
+            // Position attribute
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
             GL.EnableVertexAttribArray(0);
 
-            GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 3 * sizeof(float));
+            // Texture coordinate attribute
+            GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
             GL.EnableVertexAttribArray(1);
+
+            int texCoordLocation = shader.GetAttribLocation("aTexCoord");
+            GL.EnableVertexAttribArray(texCoordLocation);
+            GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+
 
             ElementBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
@@ -95,14 +103,15 @@ namespace Project1NEA
 
             shader.Use();
 
+            int textureLocation = GL.GetUniformLocation(shader.Handle, "ourTexture");
+            GL.Uniform1(textureLocation, 0);
+
             //texture wrapping
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.MirroredRepeat);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.MirroredRepeat);
-
             //texture filtering
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-
             //minimap stuff
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
@@ -115,24 +124,22 @@ namespace Project1NEA
 
     #region RenderFrame
     protected override void OnRenderFrame(FrameEventArgs e)
-        {
-            base.OnRenderFrame(e);
+{
+    base.OnRenderFrame(e);
+    GL.Clear(ClearBufferMask.ColorBufferBit);
 
-            GL.Clear(ClearBufferMask.ColorBufferBit);
+    shader.Use();
 
-            shader.Use();
+    // Bind texture before drawing
+    GL.ActiveTexture(TextureUnit.Texture0);
+    texture.Use();
 
-            
+    GL.BindVertexArray(VertexArrayObject);
+    GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
+    GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
 
-            double timeValue = _timer.Elapsed.TotalSeconds;
-            float greenValue = (float)Math.Sin(timeValue) / 2.0f + 0.5f;
-
-            GL.BindVertexArray(VertexArrayObject);
-
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
-
-            SwapBuffers();
-        }
+    SwapBuffers();
+}
         #endregion
 
         #region FrameBuffer
