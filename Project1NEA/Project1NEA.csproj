@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="awesomeface - Copy %283%29.png" />
     <None Remove="Rshader.frag" />
     <None Remove="shader.frag" />
     <None Remove="shader.vert" />
@@ -15,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="awesomeface - Copy (3).png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Rshader.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

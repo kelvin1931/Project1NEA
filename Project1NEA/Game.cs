@@ -16,6 +16,8 @@ namespace Project1NEA
         private int VertexArrayObject;
         int ElementBufferObject;
         private Stopwatch _timer;
+        private Texture texture;
+        private Texture texture2;
 
         float[] vertices =
             {
@@ -26,7 +28,7 @@ namespace Project1NEA
             -0.5f,  0.5f, 0.0f, 0.0f, 1.0f  // top left
              };
         uint[] indices =
-            { 0, 1, 3, 1, 2, 3};
+            { 0, 1, 3,1 ,2 ,3};
 
         public float[] texCoords =
             {
@@ -65,7 +67,7 @@ namespace Project1NEA
         protected override void OnLoad()
         {
             base.OnLoad();
-            GL.ClearColor(0.1f, 0.1f, 0.1f, 0.1f);
+            GL.ClearColor(0.3f, 0.0f, 0.5f, 1.0f);
 
             shader = new Shader("shader.vert", "Rshader.frag");
 
@@ -80,7 +82,6 @@ namespace Project1NEA
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
             GL.BufferData(BufferTarget.ArrayBuffer,vertices.Length * sizeof(float),vertices,BufferUsageHint.StaticDraw);
 
-            // Link vertex attributes
             // Position attribute
             GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
             GL.EnableVertexAttribArray(0);
@@ -88,12 +89,9 @@ namespace Project1NEA
             // Texture coordinate attribute
             GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
             GL.EnableVertexAttribArray(1);
+            
 
-            int texCoordLocation = shader.GetAttribLocation("aTexCoord");
-            GL.EnableVertexAttribArray(texCoordLocation);
-            GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
-
-
+            //EBO
             ElementBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
             GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
@@ -103,7 +101,7 @@ namespace Project1NEA
 
             shader.Use();
 
-            int textureLocation = GL.GetUniformLocation(shader.Handle, "ourTexture");
+            int textureLocation = GL.GetUniformLocation(shader.Handle, "Texture0");
             GL.Uniform1(textureLocation, 0);
 
             //texture wrapping
@@ -116,30 +114,32 @@ namespace Project1NEA
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 
+            texture = new Texture("walling - Copy (3).png");
+            texture2 = new Texture("awesomeface - Copy (3).png");
+
+
+
 
             //someOpenGLFunctionThatDrawsOurTriangle();
         }
 
-    #endregion  
+        #endregion
 
-    #region RenderFrame
-    protected override void OnRenderFrame(FrameEventArgs e)
-{
-    base.OnRenderFrame(e);
-    GL.Clear(ClearBufferMask.ColorBufferBit);
+        #region RenderFrame
+        protected override void OnRenderFrame(FrameEventArgs e)
+        {
+            base.OnRenderFrame(e);
+            GL.Clear(ClearBufferMask.ColorBufferBit);
 
-    shader.Use();
+            shader.Use();
 
-    // Bind texture before drawing
-    GL.ActiveTexture(TextureUnit.Texture0);
-    texture.Use();
+            texture.Use(TextureUnit.Texture0);
 
-    GL.BindVertexArray(VertexArrayObject);
-    GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
-    GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+            GL.BindVertexArray(VertexArrayObject);
+            GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
 
-    SwapBuffers();
-}
+            SwapBuffers();
+        }
         #endregion
 
         #region FrameBuffer

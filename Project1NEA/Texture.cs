@@ -9,8 +9,9 @@ namespace Project1NEA
     {
         public int Handle {  get; set; }
 
-        public void Use()
+        public void Use(TextureUnit unit = TextureUnit.Texture0)
         {
+            GL.ActiveTexture(unit);
             GL.BindTexture(TextureTarget.Texture2D, Handle);
         }
 
@@ -26,7 +27,10 @@ namespace Project1NEA
 
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, image.Width, image.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+
+
         }
+
 
 
     }
