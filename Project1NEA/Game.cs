@@ -101,18 +101,9 @@ namespace Project1NEA
 
             shader.Use();
 
-            int textureLocation = GL.GetUniformLocation(shader.Handle, "Texture0");
-            GL.Uniform1(textureLocation, 0);
 
-            //texture wrapping
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.MirroredRepeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.MirroredRepeat);
-            //texture filtering
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-            //minimap stuff
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            shader.SetInt("texture1", 0); // TextureUnit.Texture0
+            shader.SetInt("texture2", 1); // TextureUnit.Texture1
 
             texture = new Texture("walling - Copy (3).png");
             texture2 = new Texture("awesomeface - Copy (3).png");
@@ -130,15 +121,19 @@ namespace Project1NEA
         {
             base.OnRenderFrame(e);
             GL.Clear(ClearBufferMask.ColorBufferBit);
+            GL.BindVertexArray(VertexArrayObject);
+
 
             shader.Use();
-
             texture.Use(TextureUnit.Texture0);
+            texture2.Use(TextureUnit.Texture1);
+            
 
-            GL.BindVertexArray(VertexArrayObject);
             GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
 
-            SwapBuffers();
+            Context.SwapBuffers();
+
+            base.OnRenderFrame(e);
         }
         #endregion
 
