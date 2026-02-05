@@ -1,9 +1,12 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using Microsoft.VisualBasic;
+using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Project1NEA;
 using System.Diagnostics;
+using System.Reflection;
 using static Project1NEA.Shaders;
 
 namespace Project1NEA
@@ -19,14 +22,14 @@ namespace Project1NEA
         private Texture texture;
         private Texture texture2;
 
-        float[] vertices =
+        /* float[] vertices =
             {
             //Position          Texture coordinates
             0.5f,  0.5f, 0.0f, 1.0f, 1.0f, // top right
             0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // bottom right
             -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
             -0.5f,  0.5f, 0.0f, 0.0f, 1.0f  // top left
-             };
+             }; */
         uint[] indices =
             { 0, 1, 3,1 ,2 ,3};
 
@@ -38,7 +41,51 @@ namespace Project1NEA
             };
 
         #endregion
+        #region CUBE VETEX
+        float[] vertice = {
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+};
+        #endregion
         public Game(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title }) 
         { }
 
@@ -68,6 +115,7 @@ namespace Project1NEA
         {
             base.OnLoad();
             GL.ClearColor(0.3f, 0.0f, 0.5f, 1.0f);
+            GL.Enable(EnableCap.DepthTest);
 
             shader = new Shader("shader.vert", "Rshader.frag");
 
@@ -80,7 +128,7 @@ namespace Project1NEA
             // VBO
             VertexBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer,vertices.Length * sizeof(float),vertices,BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer,vertice.Length * sizeof(float),vertice,BufferUsageHint.StaticDraw);
 
             // Position attribute
             GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
@@ -101,12 +149,14 @@ namespace Project1NEA
 
             shader.Use();
 
-
             shader.SetInt("texture1", 0); // TextureUnit.Texture0
             shader.SetInt("texture2", 1); // TextureUnit.Texture1
 
             texture = new Texture("walling - Copy (3).png");
             texture2 = new Texture("awesomeface - Copy (3).png");
+
+
+
 
 
 
@@ -122,14 +172,34 @@ namespace Project1NEA
             base.OnRenderFrame(e);
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.BindVertexArray(VertexArrayObject);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
+
+            Matrix4 rotation = Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(90f));
+            Matrix4 translation = Matrix4.CreateTranslation(0.5f, 0.0f, 0.0f);
+            Matrix4 scale = Matrix4.CreateScale(1.0f);
+            Matrix4 transform = rotation * scale;
+
+            Matrix4 model = Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-55.0f));
+            Matrix4 view = Matrix4.CreateTranslation(0.0f, 0.0f, -3.0f);
+            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Size.X / Size.Y, 0.1f, 100.0f);
 
             shader.Use();
+
+            shader.SetMatrix4("model", model);
+            shader.SetMatrix4("view", view);
+            shader.SetMatrix4("projection", projection);
+
+            shader.SetMatrix4("transform", transform);
+
             texture.Use(TextureUnit.Texture0);
             texture2.Use(TextureUnit.Texture1);
+
             
 
-            GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+
+            //GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
 
             Context.SwapBuffers();
 
@@ -143,7 +213,7 @@ namespace Project1NEA
             base.OnFramebufferResize(e);
             GL.Viewport(0, 0, e.Width, e.Height);
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertice.Length * sizeof(float), vertice, BufferUsageHint.StaticDraw);
 
  
         }

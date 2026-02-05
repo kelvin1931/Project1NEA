@@ -1,4 +1,5 @@
 ﻿using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -84,6 +85,12 @@ namespace Project1NEA
                 {
                     Console.WriteLine("GPU Resource leak! Did you forget to call Dispose()?");
                 }
+            }
+
+            public void SetMatrix4(string name, Matrix4 matrix)
+            {
+                int location = GL.GetUniformLocation(Handle, name);
+                GL.UniformMatrix4(location, false, ref matrix);
             }
 
 
