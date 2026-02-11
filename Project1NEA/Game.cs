@@ -8,6 +8,7 @@ using Project1NEA;
 using System.Diagnostics;
 using System.Reflection;
 using static Project1NEA.Shaders;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Project1NEA
 {
@@ -21,6 +22,17 @@ namespace Project1NEA
         private Stopwatch _timer;
         private Texture texture;
         private Texture texture2;
+        private Vector3 cameraPos;
+        private Vector3 cameraTarget;
+        private Vector3 cameraDirection;
+        private Vector3 cameraRight;
+        private Vector3 cameraUp;
+        float speed = 5f;
+        Vector3 position = new Vector3(0.0f, 0.0f, 3.0f);
+        Vector3 Up = new Vector3(0.0f, 1.0f, 0.0f);
+        float Yaw = -90f;   // start facing forward
+        float Pitch = 0f;
+        Vector3 front = new Vector3(0.0f, 0.0f, -1.0f);
 
         /* float[] vertices =
             {
@@ -107,6 +119,60 @@ namespace Project1NEA
             {
                 Close();
             }
+
+            {
+                if (!IsFocused) //checks to see if the window is focusd
+                {
+                    return;
+                }
+
+                KeyboardState input = KeyboardState;
+
+
+
+                if (input.IsKeyDown(Keys.W))
+                {
+                    position += front * speed * (float)args.Time; //Forward 
+                }
+
+                if (input.IsKeyDown(Keys.S))
+                {
+                    position -= front * speed * (float)args.Time; //Backwards
+                }
+
+                if (input.IsKeyDown(Keys.A))
+                {
+                    position -= Vector3.Normalize(Vector3.Cross(front, Up)) * speed * (float)args.Time; //Left
+                }
+
+                if (input.IsKeyDown(Keys.D))
+                {
+                    position += Vector3.Normalize(Vector3.Cross(front, Up)) * speed * (float)args.Time; //Right
+                }
+
+                if (input.IsKeyDown(Keys.Space))
+                {
+                    position += Up * speed * (float)args.Time; //Up 
+                }
+
+                if (input.IsKeyDown(Keys.LeftShift))
+                {
+                    position -= Up * speed * (float)args.Time; //Down
+                }
+
+
+                front.Y = (float)Math.Sin(MathHelper.DegreesToRadians(Pitch)); // Note that we convert the angle to radians first
+                front.X = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch));
+                front.Z = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch));
+
+
+                front.X = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch)) * (float)Math.Cos(MathHelper.DegreesToRadians(Yaw));
+                front.Y = (float)Math.Sin(MathHelper.DegreesToRadians(Pitch));
+                front.Z = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch)) * (float)Math.Sin(MathHelper.DegreesToRadians(Yaw));
+
+                front = Vector3.Normalize(front);
+
+            }
         }
         #endregion
 
@@ -155,6 +221,15 @@ namespace Project1NEA
             texture = new Texture("walling - Copy (3).png");
             texture2 = new Texture("awesomeface - Copy (3).png");
 
+            Vector3 cameraPos = new Vector3(0.0f, 0.0f, 3.0f);
+            Vector3 cameraTarget = Vector3.Zero;
+            Vector3 cameraDirection = Vector3.Normalize(cameraPos - cameraTarget);
+            Vector3 up = Vector3.UnitY;
+            Vector3 cameraRight = Vector3.Normalize(Vector3.Cross(up, cameraDirection));
+            Vector3 cameraUp = Vector3.Cross(cameraDirection, cameraRight);
+
+
+           
 
 
 
@@ -182,9 +257,11 @@ namespace Project1NEA
 
             Matrix4 model = Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-55.0f));
             Matrix4 view = Matrix4.CreateTranslation(0.0f, 0.0f, -3.0f);
-            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Size.X / Size.Y, 0.1f, 100.0f);
-
+            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Size.X / (float)Size.Y, 0.1f, 100.0f);
             shader.Use();
+
+
+
 
             shader.SetMatrix4("model", model);
             shader.SetMatrix4("view", view);
@@ -195,8 +272,7 @@ namespace Project1NEA
             texture.Use(TextureUnit.Texture0);
             texture2.Use(TextureUnit.Texture1);
 
-            
-
+            view = Matrix4.LookAt(position, position + front, Up);
 
             //GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
             GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
@@ -218,7 +294,6 @@ namespace Project1NEA
  
         }
         #endregion
-
 
         #region OnResize
         protected override void OnResize(ResizeEventArgs e)
