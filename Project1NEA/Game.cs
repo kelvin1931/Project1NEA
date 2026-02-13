@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.Reflection;
 using static Project1NEA.Shaders;
 using static System.Net.Mime.MediaTypeNames;
-
 namespace Project1NEA
 {
     public class Game : GameWindow
@@ -32,7 +31,19 @@ namespace Project1NEA
         Vector3 Up = new Vector3(0.0f, 1.0f, 0.0f);
         float Yaw = -90f;   // start facing forward
         float Pitch = 0f;
+        private Vector2 _lastPos;
+        private Vector2 mouse;
+        private float pitch = 0.1f;
+        private float yaw = 0.1f;
+        private float sensitivity = 0.1f;
+        private bool firstMove = true;
         Vector3 front = new Vector3(0.0f, 0.0f, -1.0f);
+        private int _vao;
+        private int _vbo;
+        private int _ebo;
+        private float[] _vertices;
+        private uint[] _indices;
+
 
         /* float[] vertices =
             {
@@ -95,8 +106,51 @@ namespace Project1NEA
      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
     -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f
+
+    };
         #endregion
         public Game(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title }) 
         { }
@@ -110,7 +164,6 @@ namespace Project1NEA
             }
         }
         #endregion
-
         #region UpdateFrame
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
@@ -161,21 +214,36 @@ namespace Project1NEA
                 }
 
 
-                front.Y = (float)Math.Sin(MathHelper.DegreesToRadians(Pitch)); // Note that we convert the angle to radians first
-                front.X = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch));
-                front.Z = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch));
+                front = Vector3.Normalize(front);
+                var mouse = MouseState.Position;
 
+                if (firstMove)
+                {
+                    _lastPos = new Vector2(mouse.X, mouse.Y);
+                    firstMove = false;
+                }
+                else
+                {
+                    float deltaX = mouse.X - _lastPos.X;
+                    float deltaY = mouse.Y - _lastPos.Y;
+                    _lastPos = new Vector2(mouse.X, mouse.Y);
 
-                front.X = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch)) * (float)Math.Cos(MathHelper.DegreesToRadians(Yaw));
-                front.Y = (float)Math.Sin(MathHelper.DegreesToRadians(Pitch));
-                front.Z = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch)) * (float)Math.Sin(MathHelper.DegreesToRadians(Yaw));
+                    Yaw += deltaX * sensitivity;
+                    Pitch -= deltaY * sensitivity;
+
+                    // Clamp the pitch
+                    if (Pitch > 89f) Pitch = 89f;
+                    if (Pitch < -89f) Pitch = -89f;
+
+                    front.X = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch)) * (float)Math.Cos(MathHelper.DegreesToRadians(Yaw));
+                    front.Y = (float)Math.Sin(MathHelper.DegreesToRadians(Pitch));
+                    front.Z = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch)) * (float)Math.Sin(MathHelper.DegreesToRadians(Yaw));
+                }
 
                 front = Vector3.Normalize(front);
-
             }
         }
         #endregion
-
         #region OnLoad
         protected override void OnLoad()
         {
@@ -183,36 +251,40 @@ namespace Project1NEA
             GL.ClearColor(0.3f, 0.0f, 0.5f, 1.0f);
             GL.Enable(EnableCap.DepthTest);
 
+            _vertices = CreateSphere(0.5f, 40, 40);
+            _indices = CreateSphereIndices(40, 40);
+
+
             shader = new Shader("shader.vert", "Rshader.frag");
 
             _timer = Stopwatch.StartNew();
 
-            // VAO
-            VertexArrayObject = GL.GenVertexArray();
-            GL.BindVertexArray(VertexArrayObject);
+            _vao = GL.GenVertexArray();
+            _vbo = GL.GenBuffer();
+            _ebo = GL.GenBuffer();
+
+            GL.BindVertexArray(_vao);
 
             // VBO
-            VertexBufferObject = GL.GenBuffer();
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer,vertice.Length * sizeof(float),vertice,BufferUsageHint.StaticDraw);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * sizeof(float), _vertices, BufferUsageHint.StaticDraw);
 
-            // Position attribute
+            // EBO
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, _indices.Length * sizeof(uint), _indices, BufferUsageHint.StaticDraw);
+
+            // Position
             GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
             GL.EnableVertexAttribArray(0);
 
-            // Texture coordinate attribute
+            // Texture
             GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
             GL.EnableVertexAttribArray(1);
-            
 
-            //EBO
-            ElementBufferObject = GL.GenBuffer();
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
 
             GL.GetInteger(GetPName.MaxVertexAttribs, out int maxAttributeCount);
             Debug.WriteLine($"Maximum number of vertex attributes supported: {maxAttributeCount}");
-
+                
             shader.Use();
 
             shader.SetInt("texture1", 0); // TextureUnit.Texture0
@@ -229,24 +301,27 @@ namespace Project1NEA
             Vector3 cameraUp = Vector3.Cross(cameraDirection, cameraRight);
 
 
-           
+
+            CursorState = CursorState.Grabbed;
 
 
-
-
-
+            GL.Enable(EnableCap.DepthTest);
 
             //someOpenGLFunctionThatDrawsOurTriangle();
         }
 
         #endregion
+        #region OnMouseMove
+        protected override void OnMouseMove(MouseMoveEventArgs e)
+        {
+            base.OnMouseMove(e);
 
+        }
+#endregion
         #region RenderFrame
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-            GL.BindVertexArray(VertexArrayObject);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
 
@@ -255,12 +330,12 @@ namespace Project1NEA
             Matrix4 scale = Matrix4.CreateScale(1.0f);
             Matrix4 transform = rotation * scale;
 
-            Matrix4 model = Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-55.0f));
-            Matrix4 view = Matrix4.CreateTranslation(0.0f, 0.0f, -3.0f);
+            //Matrix4 model = Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-55.0f));
+            Matrix4 model = Matrix4.Identity;
             Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Size.X / (float)Size.Y, 0.1f, 100.0f);
             shader.Use();
 
-
+            Matrix4 view = Matrix4.LookAt(position, position + front, Up);
 
 
             shader.SetMatrix4("model", model);
@@ -272,17 +347,23 @@ namespace Project1NEA
             texture.Use(TextureUnit.Texture0);
             texture2.Use(TextureUnit.Texture1);
 
-            view = Matrix4.LookAt(position, position + front, Up);
+            GL.Clear(ClearBufferMask.ColorBufferBit |
+            ClearBufferMask.DepthBufferBit);
+
+            GL.BindVertexArray(_vao);
+
+            GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+
+
 
             //GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+            
 
             Context.SwapBuffers();
 
             base.OnRenderFrame(e);
         }
         #endregion
-
         #region FrameBuffer
         protected override void OnFramebufferResize(FramebufferResizeEventArgs e)
         {
@@ -294,7 +375,6 @@ namespace Project1NEA
  
         }
         #endregion
-
         #region OnResize
         protected override void OnResize(ResizeEventArgs e)
         {
@@ -303,7 +383,6 @@ namespace Project1NEA
             GL.Viewport(0, 0, Size.X, Size.Y);
         }
         #endregion
-
         #region onUnload
         protected override void OnUnload()
         {
@@ -321,7 +400,67 @@ namespace Project1NEA
             base.OnUnload();
         }
         #endregion
+        #region CreateSphere
+        private float[] CreateSphere(float radius, int stacks, int sectors)
+        {
+            List<float> vertices = new List<float>();
 
+            for (int i = 0; i <= stacks; i++)
+            {
+                float stackAngle = MathF.PI / 2 - i * MathF.PI / stacks;
+                float xy = radius * MathF.Cos(stackAngle);
+                float z = radius * MathF.Sin(stackAngle);
+
+                for (int j = 0; j <= sectors; j++)
+                {
+                    float sectorAngle = j * 2 * MathF.PI / sectors;
+
+                    float x = xy * MathF.Cos(sectorAngle);
+                    float y = xy * MathF.Sin(sectorAngle);
+
+                    // position
+                    vertices.Add(x);
+                    vertices.Add(y);
+                    vertices.Add(z);
+
+                    // texture coordinates
+                    float u = (float)j / sectors;
+                    float v = (float)i / stacks;
+
+                    vertices.Add(u);
+                    vertices.Add(v);
+                }
+            }
+
+            return vertices.ToArray();
+        }
+
+
+        private uint[] CreateSphereIndices(int stacks, int sectors)
+        {
+            List<uint> indices = new List<uint>();
+
+            for (int i = 0; i < stacks; i++)
+            {
+                int k1 = i * (sectors + 1);
+                int k2 = k1 + sectors + 1;
+
+                for (int j = 0; j < sectors; j++, k1++, k2++)
+                {
+                    indices.Add((uint)k1);
+                    indices.Add((uint)k2);
+                    indices.Add((uint)(k1 + 1));
+
+                    indices.Add((uint)(k1 + 1));
+                    indices.Add((uint)k2);
+                    indices.Add((uint)(k2 + 1));
+                }
+            }
+
+            return indices.ToArray();
+        }
+
+        #endregion
     }
 
 }
