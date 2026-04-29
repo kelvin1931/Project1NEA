@@ -62,7 +62,24 @@ namespace Project1NEA
             1.0f, 0.0f, // lower right vertex
             0.5f, 1.0f // top centre vertex
             };
+        enum GameState
+        {
+            Menu,
+            Playing
+        }
+        private GameState currentState = GameState.Menu;
 
+        private Vector3[] _planetPositions = 
+            {
+            new Vector3(2.0f,  0.0f,  0.0f),
+            new Vector3(5.0f,  0.0f,  2.0f),
+            new Vector3(-3.0f, 0.0f, -4.0f),
+            new Vector3(8.0f,  0.0f,  0.0f),
+            new Vector3(-6.0f, 0.0f, 3.0f),
+            new Vector3(10.0f, 0.0f, -2.0f),
+            new Vector3(12.0f, 0.0f,  5.0f),
+            new Vector3(16.0f, 0.0f,  6.0f)
+        };
         #endregion
         #region CUBE VETEX
         float[] vertice = {
@@ -152,6 +169,18 @@ namespace Project1NEA
 
     };
         #endregion
+        #region QuadVertex
+        float[] quadVertices = 
+            {
+            //positions tex coords
+            -1f,  1f,   0f, 1f,
+            -1f, -1f,   0f, 0f,
+            1f, -1f,    1f, 0f,
+            -1f,  1f,   0f, 1f,
+            1f, -1f,    1f, 0f,
+            1f,  1f,    1f, 1f
+        };
+        #endregion
         public Game(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title }) 
         { }
 
@@ -172,9 +201,17 @@ namespace Project1NEA
             {
                 Close();
             }
+            //if (currentState == GameState.Menu)
+            //{
+            //    if (KeyboardState.IsKeyDown(Keys.Enter))
+            //    {
+            //        currentState = GameState.Playing;
+            //    }
 
+            //    return; // stop the rest of update
+            //}
             {
-                if (!IsFocused) //checks to see if the window is focusd
+                if (!IsFocused) //checks if window focusd
                 {
                     return;
                 }
@@ -248,7 +285,7 @@ namespace Project1NEA
         protected override void OnLoad()
         {
             base.OnLoad();
-            GL.ClearColor(0.3f, 0.0f, 0.5f, 1.0f);
+            GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             GL.Enable(EnableCap.DepthTest);
 
             _vertices = CreateSphere(0.5f, 40, 40);
@@ -317,52 +354,61 @@ namespace Project1NEA
             base.OnMouseMove(e);
 
         }
-#endregion
+        #endregion
         #region RenderFrame
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-
-            Matrix4 rotation = Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(90f));
-            Matrix4 translation = Matrix4.CreateTranslation(0.5f, 0.0f, 0.0f);
-            Matrix4 scale = Matrix4.CreateScale(1.0f);
-            Matrix4 transform = rotation * scale;
-
-            //Matrix4 model = Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-55.0f));
-            Matrix4 model = Matrix4.Identity;
-            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Size.X / (float)Size.Y, 0.1f, 100.0f);
             shader.Use();
 
+            // View and pojection 
             Matrix4 view = Matrix4.LookAt(position, position + front, Up);
+            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Size.X / (float)Size.Y, 0.1f, 100.0f);
 
-
-            shader.SetMatrix4("model", model);
             shader.SetMatrix4("view", view);
             shader.SetMatrix4("projection", projection);
 
-            shader.SetMatrix4("transform", transform);
-
+            GL.BindVertexArray(_vao);
             texture.Use(TextureUnit.Texture0);
             texture2.Use(TextureUnit.Texture1);
 
-            GL.Clear(ClearBufferMask.ColorBufferBit |
-            ClearBufferMask.DepthBufferBit);
-
-            GL.BindVertexArray(_vao);
-
+            // the SUN
+            Matrix4 sunModel = Matrix4.Identity;
+            shader.SetMatrix4("model", sunModel);
             GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
 
+            // Palanet
+            for (int i = 0; i < _planetPositions.Length; i++)
+            {
+                float time = (float)_timer.Elapsed.TotalSeconds;
 
+                float orbitSpeed = 0.01f + i * 0.2f;   //speed
+                float selfRotate = 5.0f;           // spin speed
+                float distance = 5.0f + i * 2.0f;   // distance from sun
 
-            //GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
-            
+                float x = MathF.Cos(time * orbitSpeed) * distance;
+                float z = MathF.Sin(time * orbitSpeed) * (distance * 0.6f);
+
+                Matrix4 model = Matrix4.Identity;
+
+                model *= Matrix4.CreateTranslation(x, 0f, z);
+                shader.SetMatrix4("model", model);
+                //spin
+                model *= Matrix4.CreateRotationY(MathHelper.DegreesToRadians(time * selfRotate));
+
+                //size
+                model *= Matrix4.CreateScale(0.3f + i * 0.1f);
+
+                shader.SetMatrix4("model", model);
+
+                GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+            }
 
             Context.SwapBuffers();
-
-            base.OnRenderFrame(e);
-        }
+        
+    }
         #endregion
         #region FrameBuffer
         protected override void OnFramebufferResize(FramebufferResizeEventArgs e)
