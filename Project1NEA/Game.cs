@@ -15,34 +15,41 @@ namespace Project1NEA
     {
         #region variables
         private Shader shader;
+
         private int VertexBufferObject;
         private int VertexArrayObject;
-        int ElementBufferObject;
+        private int ElementBufferObject;
+        private int _vao;
+        private int _vbo;
+        private int _ebo;
+
         private Stopwatch _timer;
+
         private Texture texture;
         private Texture texture2;
+
         private Vector3 cameraPos;
         private Vector3 cameraTarget;
         private Vector3 cameraDirection;
         private Vector3 cameraRight;
         private Vector3 cameraUp;
-        float speed = 5f;
+        private Vector3 cameraFront = new Vector3(0.0f, 0.0f, -1.0f);
+
         Vector3 position = new Vector3(0.0f, 0.0f, 3.0f);
-        Vector3 Up = new Vector3(0.0f, 1.0f, 0.0f);
-        float Yaw = -90f;   // start facing forward
-        float Pitch = 0f;
+        Vector3 worldUp = new Vector3(0.0f, 1.0f, 0.0f);
+
         private Vector2 _lastPos;
         private Vector2 mouse;
-        private float pitch = 0.1f;
-        private float yaw = 0.1f;
-        private float sensitivity = 0.1f;
         private bool firstMove = true;
-        Vector3 front = new Vector3(0.0f, 0.0f, -1.0f);
-        private int _vao;
-        private int _vbo;
-        private int _ebo;
+
+        private float pitch = 0f;
+        private float yaw = -90f;
+        private float movementSpeed = 5f;
+        private float sensitivity = 0.1f;
+
         private float[] _vertices;
         private uint[] _indices;
+        
 
 
         /* float[] vertices =
@@ -53,6 +60,7 @@ namespace Project1NEA
             -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
             -0.5f,  0.5f, 0.0f, 0.0f, 1.0f  // top left
              }; */
+
         uint[] indices =
             { 0, 1, 3,1 ,2 ,3};
 
@@ -62,15 +70,10 @@ namespace Project1NEA
             1.0f, 0.0f, // lower right vertex
             0.5f, 1.0f // top centre vertex
             };
-        enum GameState
-        {
-            Menu,
-            Playing
-        }
-        private GameState currentState = GameState.Menu;
 
-        private Vector3[] _planetPositions = 
+        private Vector3[] _planetPositions =
             {
+           
             new Vector3(2.0f,  0.0f,  0.0f),
             new Vector3(5.0f,  0.0f,  2.0f),
             new Vector3(-3.0f, 0.0f, -4.0f),
@@ -79,7 +82,9 @@ namespace Project1NEA
             new Vector3(10.0f, 0.0f, -2.0f),
             new Vector3(12.0f, 0.0f,  5.0f),
             new Vector3(16.0f, 0.0f,  6.0f)
+
         };
+
         #endregion
         #region CUBE VETEX
         float[] vertice = {
@@ -169,22 +174,11 @@ namespace Project1NEA
 
     };
         #endregion
-        #region QuadVertex
-        float[] quadVertices = 
-            {
-            //positions tex coords
-            -1f,  1f,   0f, 1f,
-            -1f, -1f,   0f, 0f,
-            1f, -1f,    1f, 0f,
-            -1f,  1f,   0f, 1f,
-            1f, -1f,    1f, 0f,
-            1f,  1f,    1f, 1f
-        };
-        #endregion
         public Game(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title }) 
         { }
 
         #region MAIN
+        
         public static void Main(string[] args)
         {
             using (Game game = new Game(1440, 1080, "GameWindow")) //1440,1080
@@ -193,7 +187,9 @@ namespace Project1NEA
             }
         }
         #endregion
+
         #region UpdateFrame
+        
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
@@ -201,17 +197,9 @@ namespace Project1NEA
             {
                 Close();
             }
-            //if (currentState == GameState.Menu)
-            //{
-            //    if (KeyboardState.IsKeyDown(Keys.Enter))
-            //    {
-            //        currentState = GameState.Playing;
-            //    }
 
-            //    return; // stop the rest of update
-            //}
             {
-                if (!IsFocused) //checks if window focusd
+                if (!IsFocused) //checks to see if the window is focusd
                 {
                     return;
                 }
@@ -222,36 +210,36 @@ namespace Project1NEA
 
                 if (input.IsKeyDown(Keys.W))
                 {
-                    position += front * speed * (float)args.Time; //Forward 
+                    position += cameraFront * movementSpeed * (float)args.Time; //forward 
                 }
 
                 if (input.IsKeyDown(Keys.S))
                 {
-                    position -= front * speed * (float)args.Time; //Backwards
+                    position -= cameraFront * movementSpeed * (float)args.Time; //backwards
                 }
 
                 if (input.IsKeyDown(Keys.A))
                 {
-                    position -= Vector3.Normalize(Vector3.Cross(front, Up)) * speed * (float)args.Time; //Left
+                    position -= Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * (float)args.Time; //left
                 }
 
                 if (input.IsKeyDown(Keys.D))
                 {
-                    position += Vector3.Normalize(Vector3.Cross(front, Up)) * speed * (float)args.Time; //Right
+                    position += Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * (float)args.Time; //right
                 }
 
                 if (input.IsKeyDown(Keys.Space))
                 {
-                    position += Up * speed * (float)args.Time; //Up 
+                    position += worldUp * movementSpeed * (float)args.Time; //up 
                 }
 
                 if (input.IsKeyDown(Keys.LeftShift))
                 {
-                    position -= Up * speed * (float)args.Time; //Down
+                    position -= worldUp * movementSpeed * (float)args.Time; //down
                 }
 
 
-                front = Vector3.Normalize(front);
+                cameraFront = Vector3.Normalize(cameraFront);
                 var mouse = MouseState.Position;
 
                 if (firstMove)
@@ -259,25 +247,26 @@ namespace Project1NEA
                     _lastPos = new Vector2(mouse.X, mouse.Y);
                     firstMove = false;
                 }
+
                 else
                 {
                     float deltaX = mouse.X - _lastPos.X;
                     float deltaY = mouse.Y - _lastPos.Y;
                     _lastPos = new Vector2(mouse.X, mouse.Y);
 
-                    Yaw += deltaX * sensitivity;
-                    Pitch -= deltaY * sensitivity;
+                    yaw += deltaX * sensitivity;
+                    pitch -= deltaY * sensitivity;
 
-                    // Clamp the pitch
-                    if (Pitch > 89f) Pitch = 89f;
-                    if (Pitch < -89f) Pitch = -89f;
+                    //clamping the pitch
+                    if (pitch > 89f) pitch = 89f;
+                    if (pitch < -89f) pitch = -89f;
 
-                    front.X = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch)) * (float)Math.Cos(MathHelper.DegreesToRadians(Yaw));
-                    front.Y = (float)Math.Sin(MathHelper.DegreesToRadians(Pitch));
-                    front.Z = (float)Math.Cos(MathHelper.DegreesToRadians(Pitch)) * (float)Math.Sin(MathHelper.DegreesToRadians(Yaw));
+                    cameraFront.X = (float)Math.Cos(MathHelper.DegreesToRadians(pitch)) * (float)Math.Cos(MathHelper.DegreesToRadians(yaw));
+                    cameraFront.Y = (float)Math.Sin(MathHelper.DegreesToRadians(pitch));
+                    cameraFront.Z = (float)Math.Cos(MathHelper.DegreesToRadians(pitch)) * (float)Math.Sin(MathHelper.DegreesToRadians(yaw));
                 }
 
-                front = Vector3.Normalize(front);
+                cameraFront = Vector3.Normalize(cameraFront);
             }
         }
         #endregion
@@ -302,19 +291,16 @@ namespace Project1NEA
 
             GL.BindVertexArray(_vao);
 
-            // VBO
+            //VBO
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
             GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * sizeof(float), _vertices, BufferUsageHint.StaticDraw);
-
-            // EBO
+            //EBO
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
             GL.BufferData(BufferTarget.ElementArrayBuffer, _indices.Length * sizeof(uint), _indices, BufferUsageHint.StaticDraw);
-
-            // Position
+            //position
             GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
             GL.EnableVertexAttribArray(0);
-
-            // Texture
+            //texture
             GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
             GL.EnableVertexAttribArray(1);
 
@@ -325,17 +311,15 @@ namespace Project1NEA
             shader.Use();
 
             shader.SetInt("texture1", 0); // TextureUnit.Texture0
-            shader.SetInt("texture2", 1); // TextureUnit.Texture1
 
-            texture = new Texture("walling - Copy (3).png");
-            texture2 = new Texture("awesomeface - Copy (3).png");
+            texture = new Texture("Textures/planetTex.png");
 
-            Vector3 cameraPos = new Vector3(0.0f, 0.0f, 3.0f);
-            Vector3 cameraTarget = Vector3.Zero;
-            Vector3 cameraDirection = Vector3.Normalize(cameraPos - cameraTarget);
+            cameraPos = new Vector3(0.0f, 0.0f, 3.0f);
+            cameraTarget = Vector3.Zero;
+            cameraDirection = Vector3.Normalize(cameraPos - cameraTarget);
             Vector3 up = Vector3.UnitY;
-            Vector3 cameraRight = Vector3.Normalize(Vector3.Cross(up, cameraDirection));
-            Vector3 cameraUp = Vector3.Cross(cameraDirection, cameraRight);
+            cameraRight = Vector3.Normalize(Vector3.Cross(up, cameraDirection));
+            cameraUp = Vector3.Cross(cameraDirection, cameraRight);
 
 
 
@@ -363,16 +347,15 @@ namespace Project1NEA
 
             shader.Use();
 
-            // View and pojection 
-            Matrix4 view = Matrix4.LookAt(position, position + front, Up);
+            // View and Projection 
+            Matrix4 view = Matrix4.LookAt(position, position + cameraFront, worldUp);
             Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Size.X / (float)Size.Y, 0.1f, 100.0f);
 
             shader.SetMatrix4("view", view);
             shader.SetMatrix4("projection", projection);
 
             GL.BindVertexArray(_vao);
-            texture.Use(TextureUnit.Texture0);
-            texture2.Use(TextureUnit.Texture1);
+            texture.Use(TextureUnit.Texture0); 
 
             // the SUN
             Matrix4 sunModel = Matrix4.Identity;
@@ -380,26 +363,20 @@ namespace Project1NEA
             GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
 
             // Palanet
-            for (int i = 0; i < _planetPositions.Length; i++)
+            for (int planetIndex = 0; planetIndex < _planetPositions.Length; planetIndex++)
             {
+                //rotation
                 float time = (float)_timer.Elapsed.TotalSeconds;
+                float rotationAngle = 70.0f * planetIndex + time * 10.0f;
 
-                float orbitSpeed = 0.01f + i * 0.2f;   //speed
-                float selfRotate = 5.0f;           // spin speed
-                float distance = 5.0f + i * 2.0f;   // distance from sun
-
-                float x = MathF.Cos(time * orbitSpeed) * distance;
-                float z = MathF.Sin(time * orbitSpeed) * (distance * 0.6f);
+                //(Scale)(Rotate)(Translate)
 
                 Matrix4 model = Matrix4.Identity;
 
-                model *= Matrix4.CreateTranslation(x, 0f, z);
-                shader.SetMatrix4("model", model);
-                //spin
-                model *= Matrix4.CreateRotationY(MathHelper.DegreesToRadians(time * selfRotate));
-
-                //size
-                model *= Matrix4.CreateScale(0.3f + i * 0.1f);
+                model *= Matrix4.CreateRotationY(MathHelper.DegreesToRadians(rotationAngle));
+                model *= Matrix4.CreateTranslation(_planetPositions[planetIndex]);
+                model *= Matrix4.CreateScale(0.3f + (planetIndex * 0.1f));
+                Debug.WriteLine(time);
 
                 shader.SetMatrix4("model", model);
 
@@ -457,24 +434,24 @@ namespace Project1NEA
                 float xy = radius * MathF.Cos(stackAngle);
                 float z = radius * MathF.Sin(stackAngle);
 
-                for (int j = 0; j <= sectors; j++)
+                for (int sectorIndex = 0; sectorIndex <= sectors; sectorIndex++)
                 {
-                    float sectorAngle = j * 2 * MathF.PI / sectors;
+                    float sectorAngle = sectorIndex * 2 * MathF.PI / sectors;
 
-                    float x = xy * MathF.Cos(sectorAngle);
-                    float y = xy * MathF.Sin(sectorAngle);
+                    float xPosition = xy * MathF.Cos(sectorAngle);
+                    float yPosition = xy * MathF.Sin(sectorAngle);
 
-                    // position
-                    vertices.Add(x);
-                    vertices.Add(y);
+                    //position 
+                    vertices.Add(xPosition);
+                    vertices.Add(yPosition);
                     vertices.Add(z);
 
-                    // texture coordinates
-                    float u = (float)j / sectors;
-                    float v = (float)i / stacks;
+                    //texture coordinate section 
+                    float textureU = (float)sectorIndex / sectors;
+                    float textureV = (float)i / stacks;
 
-                    vertices.Add(u);
-                    vertices.Add(v);
+                    vertices.Add(textureU);
+                    vertices.Add(textureV);
                 }
             }
 
@@ -488,18 +465,18 @@ namespace Project1NEA
 
             for (int i = 0; i < stacks; i++)
             {
-                int k1 = i * (sectors + 1);
-                int k2 = k1 + sectors + 1;
+                int currentStackStart = i * (sectors + 1);
+                int nextStackStart = currentStackStart + sectors + 1;
 
-                for (int j = 0; j < sectors; j++, k1++, k2++)
+                for (int sectorIndex = 0; sectorIndex < sectors; sectorIndex++, currentStackStart++, nextStackStart++)
                 {
-                    indices.Add((uint)k1);
-                    indices.Add((uint)k2);
-                    indices.Add((uint)(k1 + 1));
+                    indices.Add((uint)currentStackStart);
+                    indices.Add((uint)nextStackStart);
+                    indices.Add((uint)(currentStackStart + 1));
 
-                    indices.Add((uint)(k1 + 1));
-                    indices.Add((uint)k2);
-                    indices.Add((uint)(k2 + 1));
+                    indices.Add((uint)(currentStackStart + 1));
+                    indices.Add((uint)nextStackStart);
+                    indices.Add((uint)(nextStackStart + 1));
                 }
             }
 
