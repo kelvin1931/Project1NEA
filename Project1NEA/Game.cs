@@ -347,7 +347,7 @@ namespace Project1NEA
 
                 shader.Use();
 
-                // View and Projection 
+                //view and projection 
                 Matrix4 view = Matrix4.LookAt(position, position + cameraFront, worldUp);
                 Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Size.X / (float)Size.Y, 0.1f, 100.0f);
 
@@ -385,7 +385,7 @@ namespace Project1NEA
                 //mathy part 
                
                 float radius = 3.0f + planetIndex * 2.0f;     // distance from sun
-                float angularVelocity = 0.5f + planetIndex * 0.2f; // ω
+                float angularVelocity = 0.5f + planetIndex * 0.2f; // w
 
                 // actual orbital equation
                 float x = radius * MathF.Cos(angularVelocity * time);
@@ -394,7 +394,7 @@ namespace Project1NEA
                 // model matrix
                 model = Matrix4.CreateTranslation(x, 0.0f, z);
 
-                // optional: spin on its own axis
+                //spin on its own axis
                 model *= Matrix4.CreateRotationY(time * 2.0f);
 
                 model *= Matrix4.CreateScale(0.3f + (planetIndex * 0.1f));
