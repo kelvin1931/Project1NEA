@@ -71,20 +71,6 @@ namespace Project1NEA
             0.5f, 1.0f // top centre vertex
             };
 
-            private Vector3[] _planetPositions =
-                {
-
-            new Vector3(2.0f,  0.0f,  0.0f),
-            new Vector3(5.0f,  0.0f,  2.0f),
-            new Vector3(-3.0f, 0.0f, -4.0f),
-            new Vector3(8.0f,  0.0f,  0.0f),
-            new Vector3(-6.0f, 0.0f, 3.0f),
-            new Vector3(10.0f, 0.0f, -2.0f),
-            new Vector3(12.0f, 0.0f,  5.0f),
-            new Vector3(16.0f, 0.0f,  6.0f)
-
-        };
-
             #endregion
             #region CUBE VETEX
             float[] vertice = {
@@ -173,8 +159,75 @@ namespace Project1NEA
     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f
 
     };
-            #endregion
-            public Game(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title })
+        #endregion
+
+        #region SMaxis,Eccent,Pscale,OrbPeriod.rotationSpeeds
+
+
+
+        float[] semiMajorAxes =
+            {
+            3.0f,   // Mercury
+            5.0f,   // Venus
+            7.0f,   // Earth
+            9.0f,  // Mars
+            14.0f,  // Jupiter
+            20.0f,  // Saturn
+            27.0f,  // Uranus
+            34.0f   // Neptune
+            };
+        
+        float[] eccentricities =
+            {
+            0.2056f,
+            0.0067f,
+            0.0167f,
+            0.0934f,
+            0.0489f,
+            0.0565f,
+            0.0463f,
+            0.0097f
+            };
+
+        float[] planetScales =
+            {
+            0.12f, // Mercury
+            0.27f, // Venus
+            0.30f, // Earth
+            0.15f, // Mars
+            1.05f, // Jupiter
+            0.90f, // Saturn
+            0.54f, // Uranus
+            0.51f  // Neptune
+        };
+
+        float[] orbitalPeriods =
+            {
+            0.24f,
+            0.62f,
+            1.0f,
+            1.88f,
+            11.86f,
+            29.46f,
+            84.01f,
+            164.8f
+        };
+
+
+        float[] rotationSpeeds =
+            {
+            1.0f,
+            -0.2f,
+            1.0f,
+            0.97f,
+            2.4f,
+            2.2f,
+            -1.4f,
+            1.5f
+        };
+
+        #endregion
+        public Game(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title })
             { }
 
             #region MAIN
@@ -338,75 +391,106 @@ namespace Project1NEA
                 base.OnMouseMove(e);
 
             }
-            #endregion
-            #region RenderFrame
-            protected override void OnRenderFrame(FrameEventArgs e)
+        #endregion
+        #region RenderFrame
+        protected override void OnRenderFrame(FrameEventArgs e)
+        {
+            base.OnRenderFrame(e);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            shader.Use();
+
+            //view and projection 
+            Matrix4 view = Matrix4.LookAt(position, position + cameraFront, worldUp);
+            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Size.X / (float)Size.Y, 0.1f, 100.0f);
+
+            shader.SetMatrix4("view", view);
+            shader.SetMatrix4("projection", projection);
+
+            GL.BindVertexArray(_vao);
+            texture.Use(TextureUnit.Texture0);
+
+            // the SUN
+            Matrix4 sunModel = Matrix4.CreateScale(1.5f);
+            shader.SetMatrix4("model", sunModel);
+            GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+
+            for (int planetIndex = 0; planetIndex < semiMajorAxes.Length; planetIndex++)
             {
-                base.OnRenderFrame(e);
-                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                float time = (float)_timer.Elapsed.TotalSeconds;
 
-                shader.Use();
+                //orbital parmeters
 
-                //view and projection 
-                Matrix4 view = Matrix4.LookAt(position, position + cameraFront, worldUp);
-                Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Size.X / (float)Size.Y, 0.1f, 100.0f);
+                float semiMajorAxis = semiMajorAxes[planetIndex];
+                float eccentricity = eccentricities[planetIndex];
+                float scale = planetScales[planetIndex];
 
-                shader.SetMatrix4("view", view);
-                shader.SetMatrix4("projection", projection);
 
-                GL.BindVertexArray(_vao);
-                texture.Use(TextureUnit.Texture0);
+                //kepler like orbital speed
 
-                // the SUN
-                Matrix4 sunModel = Matrix4.Identity;
-                shader.SetMatrix4("model", sunModel);
-                GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+                //inner planets move faster
+                float orbitalPeriod = orbitalPeriods[planetIndex] * 10.0f;
 
-                // Palanet
-                for (int planetIndex = 0; planetIndex < _planetPositions.Length; planetIndex++)
+                //mean motion
+                float meanMotion = MathF.PI * 2.0f / orbitalPeriod;
+
+                //mean anomaly
+                float meanAnomaly = meanMotion * time;
+
+              
+
+                //kepler's equation
+                float eccentricAnomaly = meanAnomaly;
+
+                //newton-raphson iteration
+                for (int i = 0; i < 5; i++)
                 {
-                    //rotation
-                    float time = (float)_timer.Elapsed.TotalSeconds;
-                float rotationAngle = 70.0f * planetIndex + time * 10.0f;
-                
-                Matrix4 model = Matrix4.Identity;
-                
-                //orbit around sun
-                model *= Matrix4.CreateRotationY(MathHelper.DegreesToRadians(rotationAngle));
-
-                //move planet away from sun
-                model *= Matrix4.CreateTranslation(_planetPositions[planetIndex]);
-
-                //scale planet
-                model *= Matrix4.CreateScale(0.3f + (planetIndex * 0.1f));
-
-               
-
-                //mathy part 
-               
-                float radius = 3.0f + planetIndex * 2.0f;     // distance from sun
-                float angularVelocity = 0.5f + planetIndex * 0.2f; // w
-
-                // actual orbital equation
-                float x = radius * MathF.Cos(angularVelocity * time);
-                float z = radius * MathF.Sin(angularVelocity * time);
-
-                // model matrix
-                model = Matrix4.CreateTranslation(x, 0.0f, z);
-
-                //spin on its own axis
-                model *= Matrix4.CreateRotationY(time * 2.0f);
-
-                model *= Matrix4.CreateScale(0.3f + (planetIndex * 0.1f));
-
-                Debug.WriteLine(time);
-
-                    shader.SetMatrix4("model", model);
-
-                    GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+                    eccentricAnomaly = eccentricAnomaly - (eccentricAnomaly - eccentricity * MathF.Sin(eccentricAnomaly) - meanAnomaly) / (1.0f - eccentricity * MathF.Cos(eccentricAnomaly));
                 }
 
-                Context.SwapBuffers();
+
+                //true orbital position
+
+                float x = semiMajorAxis * (MathF.Cos(eccentricAnomaly) - eccentricity);
+
+                float z = semiMajorAxis * MathF.Sqrt(1.0f - eccentricity * eccentricity) * MathF.Sin(eccentricAnomaly);
+
+                #region orbit inclinations
+                // ORBITAL INCLINATION
+                float[] inclinations =
+                {
+                    7.0f,   // Mercury
+                    3.4f,   // Venus
+                    0.0f,   // Earth
+                    1.85f,  // Mars
+                    1.3f,   // Jupiter
+                    2.5f,   // Saturn
+                    0.8f,   // Uranus
+                 1.8f    // Neptune
+                };
+                #endregion
+                float inclination = MathHelper.DegreesToRadians(inclinations[planetIndex]);
+
+                // tilt orbit plane
+                Vector3 orbitPosition = new Vector3( x, z * MathF.Sin(inclination), z * MathF.Cos(inclination) );
+
+
+                //modl matrix
+
+                Matrix4 scaleMatrix = Matrix4.CreateScale(scale);
+
+                Matrix4 rotation = Matrix4.CreateRotationY( time * rotationSpeeds[planetIndex] );
+
+                Matrix4 translation = Matrix4.CreateTranslation(orbitPosition);
+
+                Matrix4 model = scaleMatrix * rotation * translation;
+
+                shader.SetMatrix4("model", model);
+
+                GL.DrawElements(PrimitiveType.Triangles,_indices.Length,DrawElementsType.UnsignedInt,0);
+            }
+
+            Context.SwapBuffers();
 
             }
             #endregion
