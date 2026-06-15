@@ -27,8 +27,18 @@ namespace Project1NEA
 
             private Texture texture;
             private Texture texture2;
+            private Texture texture3;
+        private Texture texture4;
+        private Texture texture5;
+        private Texture texture6;
+        private Texture texture7;
+        private Texture texture8;
+        private Texture texture9;
+        private Texture texture10;
 
-            private Vector3 cameraPos;
+        private bool isCTRLdown = false;
+
+        private Vector3 cameraPos;
             private Vector3 cameraTarget;
             private Vector3 cameraDirection;
             private Vector3 cameraRight;
@@ -191,14 +201,14 @@ namespace Project1NEA
 
         float[] planetScales =
             {
-            0.12f, // Mercury
-            0.27f, // Venus
-            0.30f, // Earth
-            0.15f, // Mars
-            1.05f, // Jupiter
-            0.90f, // Saturn
-            0.54f, // Uranus
-            0.51f  // Neptune
+            0.24f, // Mercury
+            0.54f, // Venus
+            0.6f, // Earth
+            0.3f, // Mars
+            2.1f, // Jupiter
+            1.8f, // Saturn
+            1.08f, // Uranus
+            1.02f  // Neptune
         };
 
         float[] orbitalPeriods =
@@ -234,7 +244,7 @@ namespace Project1NEA
 
             public static void Main(string[] args)
             {
-                using (Game game = new Game(1440, 1080, "GameWindow")) //1440,1080
+                using (Game game = new Game(1920, 1100, "GameWindow")) //1920 x 1200
                 {
                     game.Run();
                 }
@@ -266,6 +276,16 @@ namespace Project1NEA
                         position += cameraFront * movementSpeed * (float)args.Time; //forward 
                     }
 
+                    if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.W))
+                    {
+                        position += cameraFront * movementSpeed * 10 * (float)args.Time; //Speed forward 
+                    }
+
+                    if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.S))
+                    {
+                        position -= cameraFront * movementSpeed * 10 * (float)args.Time; //Speed Backwards 
+                    }
+
                     if (input.IsKeyDown(Keys.S))
                     {
                         position -= cameraFront * movementSpeed * (float)args.Time; //backwards
@@ -275,13 +295,21 @@ namespace Project1NEA
                     {
                         position -= Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * (float)args.Time; //left
                     }
+                    if (input.IsKeyDown(Keys.A) && input.IsKeyDown(Keys.LeftControl))
+                    {
+                        position -= Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * 10 * (float)args.Time; // Speed left
+                    }
 
                     if (input.IsKeyDown(Keys.D))
                     {
                         position += Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * (float)args.Time; //right
                     }
-
-                    if (input.IsKeyDown(Keys.Space))
+                    if (input.IsKeyDown(Keys.D) && input.IsKeyDown(Keys.LeftControl))
+                    {
+                        position += Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * 10 * (float)args.Time; //Speed right
+                    }
+ 
+                if (input.IsKeyDown(Keys.Space))
                     {
                         position += worldUp * movementSpeed * (float)args.Time; //up 
                     }
@@ -364,15 +392,27 @@ namespace Project1NEA
                 shader.Use();
 
                 shader.SetInt("texture1", 0); // TextureUnit.Texture0
+                
+            
+            
+            
+            texture = new Texture("Textures/sunTex.png");
+            texture2 = new Texture("Textures/starv7.png");
+            texture3 = new Texture("Textures/Mercury.png");
+            texture4 = new Texture("Textures/Venus.png");
+            texture5 = new Texture("Textures/Earth (2).png");
+            texture6 = new Texture("Textures/Mars.png");
+            texture7 = new Texture("Textures/Jupiter.png");
+            texture8 = new Texture("Textures/Saturn.png");
+            texture9 = new Texture("Textures/Uranus.png");
+            texture10 = new Texture("Textures/Neptune.png");
 
-                texture = new Texture("Textures/planetTex.png");
-
-                cameraPos = new Vector3(0.0f, 0.0f, 3.0f);
-                cameraTarget = Vector3.Zero;
-                cameraDirection = Vector3.Normalize(cameraPos - cameraTarget);
-                Vector3 up = Vector3.UnitY;
-                cameraRight = Vector3.Normalize(Vector3.Cross(up, cameraDirection));
-                cameraUp = Vector3.Cross(cameraDirection, cameraRight);
+            cameraPos = new Vector3(0.0f, 0.0f, 3.0f);
+            cameraTarget = Vector3.Zero;
+            cameraDirection = Vector3.Normalize(cameraPos - cameraTarget);
+            Vector3 up = Vector3.UnitY;
+            cameraRight = Vector3.Normalize(Vector3.Cross(up, cameraDirection));
+            cameraUp = Vector3.Cross(cameraDirection, cameraRight);
 
 
 
@@ -408,19 +448,60 @@ namespace Project1NEA
             shader.SetMatrix4("projection", projection);
 
             GL.BindVertexArray(_vao);
-            texture.Use(TextureUnit.Texture0);
+            
+
+
+            // stars
+            texture2.Use(TextureUnit.Texture0);
+            Matrix4 Stars = Matrix4.CreateScale(200f);
+            shader.SetMatrix4("model", Stars);
+            GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+
 
             // the SUN
+            texture.Use(TextureUnit.Texture0);
             Matrix4 sunModel = Matrix4.CreateScale(1.5f);
             shader.SetMatrix4("model", sunModel);
             GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+            
 
             for (int planetIndex = 0; planetIndex < semiMajorAxes.Length; planetIndex++)
             {
-                float time = (float)_timer.Elapsed.TotalSeconds;
+                if (planetIndex == 0)
+                {
+                    texture3.Use(TextureUnit.Texture0);
+                }
+                if (planetIndex == 1)
+                {
+                    texture4.Use(TextureUnit.Texture0);
+                }
+                if (planetIndex == 2)
+                {
+                    texture5.Use(TextureUnit.Texture0);
+                }
+                if (planetIndex == 3)
+                {
+                    texture6.Use(TextureUnit.Texture0);
+                }
+                if (planetIndex == 4)
+                {
+                    texture7.Use(TextureUnit.Texture0);
+                }
+                if (planetIndex == 5)
+                {
+                    texture8.Use(TextureUnit.Texture0);
+                }
+                if (planetIndex == 6)
+                {
+                    texture9.Use(TextureUnit.Texture0);
+                }
+                if (planetIndex == 7)
+                {
+                    texture10.Use(TextureUnit.Texture0);
+                }
+                float time = (float)_timer.Elapsed.TotalSeconds + 300;
 
                 //orbital parmeters
-
                 float semiMajorAxis = semiMajorAxes[planetIndex];
                 float eccentricity = eccentricities[planetIndex];
                 float scale = planetScales[planetIndex];
@@ -429,7 +510,7 @@ namespace Project1NEA
                 //kepler like orbital speed
 
                 //inner planets move faster
-                float orbitalPeriod = orbitalPeriods[planetIndex] * 10.0f;
+                float orbitalPeriod = orbitalPeriods[planetIndex] * 15.0f;
 
                 //mean motion
                 float meanMotion = MathF.PI * 2.0f / orbitalPeriod;

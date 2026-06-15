@@ -21,7 +21,22 @@
     <None Remove="Rshader.frag" />
     <None Remove="shader.frag" />
     <None Remove="shader.vert" />
+    <None Remove="Textures\Earth %282%29.png" />
+    <None Remove="Textures\Jupiter.png" />
+    <None Remove="Textures\Mars.png" />
+    <None Remove="Textures\Mercury.png" />
+    <None Remove="Textures\Neptune.png" />
     <None Remove="Textures\planetTex.png" />
+    <None Remove="Textures\Saturn.png" />
+    <None Remove="Textures\starsTex.png" />
+    <None Remove="Textures\starV2.png" />
+    <None Remove="Textures\starV3.png" />
+    <None Remove="Textures\starV4.png" />
+    <None Remove="Textures\starV6.png" />
+    <None Remove="Textures\starv7.png" />
+    <None Remove="Textures\sunTex.png" />
+    <None Remove="Textures\Uranus.png" />
+    <None Remove="Textures\Venus.png" />
     <None Remove="walling - Copy %283%29.png" />
   </ItemGroup>
 
@@ -32,17 +47,47 @@
     <Content Include="shader.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Textures\Earth (2).png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Jupiter.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Mars.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Mercury.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Neptune.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\planetTex.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Saturn.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\starsTex.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\starv7.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\sunTex.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Uranus.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\Venus.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="OpenTK" Version="4.9.4" />
     <PackageReference Include="StbImageSharp" Version="2.30.15" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="Textures\planetTex.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
 </Project>
