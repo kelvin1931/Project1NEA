@@ -21,7 +21,6 @@
     <None Remove="Rshader.frag" />
     <None Remove="shader.frag" />
     <None Remove="shader.vert" />
-    <None Remove="Textures\Earth %282%29.png" />
     <None Remove="Textures\Jupiter.png" />
     <None Remove="Textures\Mars.png" />
     <None Remove="Textures\Mercury.png" />
@@ -46,9 +45,6 @@
     </Content>
     <Content Include="shader.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Textures\Earth (2).png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Textures\Jupiter.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
