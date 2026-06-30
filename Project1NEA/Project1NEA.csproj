@@ -21,12 +21,14 @@
     <None Remove="Rshader.frag" />
     <None Remove="shader.frag" />
     <None Remove="shader.vert" />
+    <None Remove="Textures\Earth %282%29.png" />
     <None Remove="Textures\Jupiter.png" />
     <None Remove="Textures\Mars.png" />
     <None Remove="Textures\Mercury.png" />
     <None Remove="Textures\Neptune.png" />
     <None Remove="Textures\planetTex.png" />
     <None Remove="Textures\Saturn.png" />
+    <None Remove="Textures\starfinale.png" />
     <None Remove="Textures\starsTex.png" />
     <None Remove="Textures\starV2.png" />
     <None Remove="Textures\starV3.png" />
@@ -46,6 +48,9 @@
     <Content Include="shader.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Textures\Earth (2).png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Textures\Jupiter.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -62,6 +67,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Textures\Saturn.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\starfinale.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Textures\starsTex.png">
