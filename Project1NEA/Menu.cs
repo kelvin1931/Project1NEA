@@ -17,6 +17,11 @@ namespace Project1NEA
         private int selectedOption = 0;
         private int vao;
         private int vbo;
+        private Shader shader;
+
+        // Vertical placement of the option bars in normalised device coordinates.
+        private const float optionSpacing = 0.22f;
+        private const float firstOptionY = 0.33f;
 
         private string[] options = { "Start Simulation", "Controls", "Credits", "Exit" };
 
@@ -24,6 +29,9 @@ namespace Project1NEA
 
 
         public bool StartGame 
+        { get; private set; } = false;
+
+        public bool ExitRequested
         { get; private set; } = false;
 
 
@@ -60,7 +68,8 @@ namespace Project1NEA
 
         public void Load()
         {
-            // shaders, textures and buttons etc
+            shader = new Shader("menu.vert", "menu.frag");
+            InitUI();
         }
 
 
@@ -94,7 +103,7 @@ namespace Project1NEA
                         break;
 
                     case 3:
-                        // Exit will be handled by Game.cs
+                        ExitRequested = true;
                         break;
                 }
             }
@@ -105,7 +114,24 @@ namespace Project1NEA
 
         public void Render()
         {
-            //do rendering here
+            shader.Use();
+            GL.BindVertexArray(vao);
+
+            for (int optionIndex = 0; optionIndex < options.Length; optionIndex++)
+            {
+                float y = firstOptionY - optionIndex * optionSpacing;
+
+                // The highlighted option is drawn wider and brighter than the rest.
+                bool isSelected = optionIndex == selectedOption;
+
+                shader.SetVector2("offset", new Vector2(0.0f, y));
+                shader.SetVector2("scale", isSelected ? new Vector2(1.1f, 0.9f) : new Vector2(1.0f, 0.75f));
+                shader.SetVector4("colour", isSelected
+                    ? new Vector4(0.95f, 0.75f, 0.25f, 1.0f)
+                    : new Vector4(0.25f, 0.25f, 0.35f, 1.0f));
+
+                GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+            }
         }
 
 

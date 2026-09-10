@@ -111,6 +111,18 @@ namespace Project1NEA
                 GL.Uniform1(location, value);
             }
 
+            public void SetVector2(string name, Vector2 vector)
+            {
+                int location = GL.GetUniformLocation(Handle, name);
+                GL.Uniform2(location, vector);
+            }
+
+            public void SetVector4(string name, Vector4 vector)
+            {
+                int location = GL.GetUniformLocation(Handle, name);
+                GL.Uniform4(location, vector);
+            }
+
         }
     }
 }

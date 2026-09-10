@@ -262,6 +262,12 @@ namespace Project1NEA
             {
                 menu.Update(KeyboardState);
 
+                if (menu.ExitRequested || KeyboardState.IsKeyDown(Keys.Escape))
+                {
+                    Close();
+                    return;
+                }
+
                 if (menu.StartGame)
                 {
                     gameState = GameState.Playing;
@@ -462,7 +468,11 @@ namespace Project1NEA
             base.OnRenderFrame(e);
             if (gameState == GameState.MainMenu)
             {
+                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
                 menu.Render();
+
+                Context.SwapBuffers();
             }
             else
             {
@@ -651,25 +661,32 @@ namespace Project1NEA
 
                 for (int i = 0; i <= stacks; i++)
                 {
+                    // i == 0 is the north pole, i == stacks is the south pole.
                     float stackAngle = MathF.PI / 2 - i * MathF.PI / stacks;
-                    float xy = radius * MathF.Cos(stackAngle);
-                    float z = radius * MathF.Sin(stackAngle);
+
+                    // The poles sit on the Y axis so that they line up with the
+                    // world's up vector and with the CreateRotationY axial spin.
+                    float yPosition = radius * MathF.Sin(stackAngle);
+                    float ringRadius = radius * MathF.Cos(stackAngle);
 
                     for (int sectorIndex = 0; sectorIndex <= sectors; sectorIndex++)
                     {
                         float sectorAngle = sectorIndex * 2 * MathF.PI / sectors;
 
-                        float xPosition = xy * MathF.Cos(sectorAngle);
-                        float yPosition = xy * MathF.Sin(sectorAngle);
+                        float xPosition = ringRadius * MathF.Cos(sectorAngle);
+                        float zPosition = ringRadius * MathF.Sin(sectorAngle);
 
                         //position 
                         vertices.Add(xPosition);
                         vertices.Add(yPosition);
-                        vertices.Add(z);
+                        vertices.Add(zPosition);
 
                         //texture coordinate section 
                         float textureU = (float)sectorIndex / sectors;
-                        float textureV = (float)i / stacks;
+
+                        // The image is flipped when it is loaded, so v = 1 is the top
+                        // row of the source map, which is where the north pole belongs.
+                        float textureV = 1.0f - (float)i / stacks;
 
                         vertices.Add(textureU);
                         vertices.Add(textureV);

@@ -48,6 +48,12 @@
     <Content Include="shader.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="menu.vert">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="menu.frag">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Textures\Earth (2).png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
