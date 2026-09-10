@@ -13,7 +13,7 @@ namespace Project1NEA
     {
         public class Game : GameWindow
         {
-            #region variables
+                   #region variables
             private Shader shader;
 
             private int VertexBufferObject;
@@ -244,7 +244,7 @@ namespace Project1NEA
 
             public static void Main(string[] args)
             {
-                using (Game game = new Game(1920, 1100, "GameWindow")) //1920 x 1200
+                using (Game game = new Game(2560, 1600, "GameWindow")) //1920 x 1200
                 {
                     game.Run();
                 }
@@ -535,7 +535,6 @@ namespace Project1NEA
                 float x = semiMajorAxis * (MathF.Cos(eccentricAnomaly) - eccentricity);
 
                 float z = semiMajorAxis * MathF.Sqrt(1.0f - eccentricity * eccentricity) * MathF.Sin(eccentricAnomaly);
-
                 #region orbit inclinations
                 // ORBITAL INCLINATION
                 float[] inclinations =
