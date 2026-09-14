@@ -24,6 +24,10 @@ namespace Project1NEA
             private int _vbo;
             private int _ebo;
             private Menu menu;
+            private TextRenderer textRenderer;
+
+            // Earth is index 2 of the orbital data arrays.
+            private const int EarthIndex = 2;
             private Stopwatch _timer;
             private GameState gameState = GameState.MainMenu;
 
@@ -226,6 +230,19 @@ namespace Project1NEA
         };
 
 
+        // ORBITAL INCLINATION in degrees
+        float[] inclinations =
+            {
+            7.0f,   // Mercury
+            3.4f,   // Venus
+            0.0f,   // Earth
+            1.85f,  // Mars
+            1.3f,   // Jupiter
+            2.5f,   // Saturn
+            0.8f,   // Uranus
+            1.8f    // Neptune
+        };
+
         float[] rotationSpeeds =
             {
             1.0f,
@@ -258,31 +275,31 @@ namespace Project1NEA
             protected override void OnUpdateFrame(FrameEventArgs args)
             {
                 base.OnUpdateFrame(args);
-            if (gameState == GameState.MainMenu)
+            if (gameState != GameState.Playing)
             {
-                menu.Update(KeyboardState);
+                gameState = menu.Update(KeyboardState, gameState);
 
-                if (menu.ExitRequested || KeyboardState.IsKeyDown(Keys.Escape))
+                if (menu.ExitRequested)
                 {
                     Close();
                     return;
                 }
 
-                if (menu.StartGame)
+                if (gameState == GameState.Playing)
                 {
-                    gameState = GameState.Playing;
-                    menu.ResetStartGame();
+                    EnterSimulation();
                 }
 
                 return;
             }
-            else
+
+            // Escape returns to the menu rather than closing, so the user can
+            // always get back without losing the simulation.
+            if (KeyboardState.IsKeyPressed(Keys.Escape))
             {
-                // Your current solar system update code
-            }
-            if (KeyboardState.IsKeyDown(Keys.Escape))
-            {
-                Close();
+                gameState = GameState.MainMenu;
+                CursorState = CursorState.Normal;
+                return;
             }
 
             {
@@ -443,10 +460,15 @@ namespace Project1NEA
             cameraRight = Vector3.Normalize(Vector3.Cross(up, cameraDirection));
             cameraUp = Vector3.Cross(cameraDirection, cameraRight);
 
-            menu = new Menu();
-            menu.Load();
+            textRenderer = new TextRenderer("Textures/font.png");
+            textRenderer.Resize(Size.X, Size.Y);
 
-            CursorState = CursorState.Grabbed;
+            menu = new Menu();
+            menu.Load(textRenderer);
+
+            // The pointer is only captured once the simulation starts, so the
+            // menu can be used normally.
+            CursorState = CursorState.Normal;
 
 
                 GL.Enable(EnableCap.DepthTest);
@@ -466,11 +488,11 @@ namespace Project1NEA
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
-            if (gameState == GameState.MainMenu)
+            if (gameState != GameState.Playing)
             {
                 GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-                menu.Render();
+                menu.Render(gameState, Size.X, Size.Y);
 
                 Context.SwapBuffers();
             }
@@ -539,61 +561,10 @@ namespace Project1NEA
                     {
                         texture10.Use(TextureUnit.Texture0);
                     }
-                    float time = (float)_timer.Elapsed.TotalSeconds + 300;
-
-                    //orbital parmeters
-                    float semiMajorAxis = semiMajorAxes[planetIndex];
-                    float eccentricity = eccentricities[planetIndex];
+                    float time = SimulationTime;
                     float scale = planetScales[planetIndex];
 
-
-                    //kepler like orbital speedf
-
-                    //inner planets move faster
-                    float orbitalPeriod = orbitalPeriods[planetIndex] * 15.0f;
-
-                    //mean motion
-                    float meanMotion = MathF.PI * 2.0f / orbitalPeriod;
-
-                    //mean anomaly
-                    float meanAnomaly = meanMotion * time;
-
-
-
-                    //kepler's equation
-                    float eccentricAnomaly = meanAnomaly;
-
-                    //newton-raphson iteration
-                    for (int i = 0; i < 5; i++)
-                    {
-                        eccentricAnomaly = eccentricAnomaly - (eccentricAnomaly - eccentricity * MathF.Sin(eccentricAnomaly) - meanAnomaly) / (1.0f - eccentricity * MathF.Cos(eccentricAnomaly));
-                    }
-
-
-                    //true orbital position
-
-                    float x = semiMajorAxis * (MathF.Cos(eccentricAnomaly) - eccentricity);
-
-                    float z = semiMajorAxis * MathF.Sqrt(1.0f - eccentricity * eccentricity) * MathF.Sin(eccentricAnomaly);
-
-                    #region orbit inclinations
-                    // ORBITAL INCLINATION
-                    float[] inclinations =
-                    {
-                    7.0f,   // Mercury
-                    3.4f,   // Venus
-                    0.0f,   // Earth
-                    1.85f,  // Mars
-                    1.3f,   // Jupiter
-                    2.5f,   // Saturn
-                    0.8f,   // Uranus
-                 1.8f    // Neptune
-                };
-                    #endregion
-                    float inclination = MathHelper.DegreesToRadians(inclinations[planetIndex]);
-
-                    // tilt orbit plane
-                    Vector3 orbitPosition = new Vector3(x, z * MathF.Sin(inclination), z * MathF.Cos(inclination));
+                    Vector3 orbitPosition = GetPlanetPosition(planetIndex, time);
 
 
                     //modl matrix
@@ -635,6 +606,11 @@ namespace Project1NEA
                 base.OnResize(e);
 
                 GL.Viewport(0, 0, Size.X, Size.Y);
+
+                if (textRenderer != null)
+                {
+                    textRenderer.Resize(Size.X, Size.Y);
+                }
             }
             #endregion
             #region onUnload
@@ -653,6 +629,79 @@ namespace Project1NEA
 
                 base.OnUnload();
             }
+            #endregion
+            #region Simulation helpers
+
+            /// <summary>
+            /// Elapsed simulation time. The offset keeps the planets away from
+            /// their shared starting line, so they are not all in a row.
+            /// </summary>
+            private float SimulationTime
+            {
+                get { return (float)_timer.Elapsed.TotalSeconds + 300; }
+            }
+
+            /// <summary>
+            /// Works out where a planet is on its ellipse at the given time by
+            /// solving Kepler's equation, then tilts the result onto the
+            /// planet's own orbital plane.
+            /// </summary>
+            private Vector3 GetPlanetPosition(int planetIndex, float time)
+            {
+                float semiMajorAxis = semiMajorAxes[planetIndex];
+                float eccentricity = eccentricities[planetIndex];
+
+                // Inner planets move faster, so period scales the whole orbit.
+                float orbitalPeriod = orbitalPeriods[planetIndex] * 15.0f;
+
+                float meanMotion = MathF.PI * 2.0f / orbitalPeriod;
+                float meanAnomaly = meanMotion * time;
+
+                // Kepler's equation cannot be rearranged for the eccentric
+                // anomaly, so it is solved by Newton-Raphson iteration. Five
+                // passes is more than enough at these eccentricities, and a
+                // fixed count keeps every frame the same length.
+                float eccentricAnomaly = meanAnomaly;
+
+                for (int i = 0; i < 5; i++)
+                {
+                    eccentricAnomaly = eccentricAnomaly - (eccentricAnomaly - eccentricity * MathF.Sin(eccentricAnomaly) - meanAnomaly) / (1.0f - eccentricity * MathF.Cos(eccentricAnomaly));
+                }
+
+                float x = semiMajorAxis * (MathF.Cos(eccentricAnomaly) - eccentricity);
+                float z = semiMajorAxis * MathF.Sqrt(1.0f - eccentricity * eccentricity) * MathF.Sin(eccentricAnomaly);
+
+                float inclination = MathHelper.DegreesToRadians(inclinations[planetIndex]);
+
+                // tilt orbit plane
+                return new Vector3(x, z * MathF.Sin(inclination), z * MathF.Cos(inclination));
+            }
+
+            /// <summary>
+            /// Called when the user chooses Start. Places the camera beside
+            /// Earth looking at it, captures the pointer, and resets the mouse
+            /// baseline so the view does not jump on the first movement.
+            /// </summary>
+            private void EnterSimulation()
+            {
+                Vector3 earthPosition = GetPlanetPosition(EarthIndex, SimulationTime);
+
+                // Stand off far enough that Earth is fully in view.
+                Vector3 offset = new Vector3(0.0f, 0.5f, 2.5f);
+                position = earthPosition + offset;
+
+                Vector3 towardsEarth = Vector3.Normalize(earthPosition - position);
+                cameraFront = towardsEarth;
+
+                // Keep pitch and yaw in step with the new direction, otherwise
+                // the next mouse movement would snap the view back.
+                pitch = MathHelper.RadiansToDegrees(MathF.Asin(towardsEarth.Y));
+                yaw = MathHelper.RadiansToDegrees(MathF.Atan2(towardsEarth.Z, towardsEarth.X));
+
+                firstMove = true;
+                CursorState = CursorState.Grabbed;
+            }
+
             #endregion
             #region CreateSphere
             private float[] CreateSphere(float radius, int stacks, int sectors)
