@@ -263,7 +263,7 @@ namespace Project1NEA
 
             public static void Main(string[] args)
             {
-                using (Game game = new Game(1920, 1100, "GameWindow")) //1920 x 1200
+                using (Game game = new Game(2560, 1600, "GameWindow")) //1920 x 1200
                 {
                     game.Run();
                 }
