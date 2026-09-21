@@ -183,14 +183,14 @@ namespace Project1NEA
 
         float[] semiMajorAxes =
             {
-            3.0f,   // Mercury
-            5.0f,   // Venus
-            7.0f,   // Earth
-            9.0f,  // Mars
-            14.0f,  // Jupiter
-            20.0f,  // Saturn
-            27.0f,  // Uranus
-            34.0f   // Neptune
+            3.0f,   //Mercury
+            5.0f,   //Venus
+            7.0f,   //Earth
+            9.0f,  //Mars
+            14.0f,  //Jupiter
+            20.0f,  //Saturn
+            27.0f,  //Uranus
+            34.0f   //Neptune
             };
         
         float[] eccentricities =
@@ -207,14 +207,14 @@ namespace Project1NEA
 
         float[] planetScales =
             {
-            0.24f, // Mercury
-            0.54f, // Venus
-            0.6f, // Earth
-            0.3f, // Mars
-            2.1f, // Jupiter
-            1.8f, // Saturn
-            1.08f, // Uranus
-            1.02f  // Neptune
+            0.24f, //Mercury
+            0.54f, //Venus
+            0.6f, //Earth
+            0.3f, //Mars
+            2.1f, //Jupiter
+            1.8f, //Saturn
+            1.08f, //Uranus
+            1.02f  //Neptune
         };
 
         float[] orbitalPeriods =
@@ -233,14 +233,14 @@ namespace Project1NEA
         // ORBITAL INCLINATION in degrees
         float[] inclinations =
             {
-            7.0f,   // Mercury
-            3.4f,   // Venus
-            0.0f,   // Earth
-            1.85f,  // Mars
-            1.3f,   // Jupiter
-            2.5f,   // Saturn
-            0.8f,   // Uranus
-            1.8f    // Neptune
+            7.0f,   //Mercury
+            3.4f,   //Venus
+            0.0f,   //Earth
+            1.85f,  //Mars
+            1.3f,   //Jupiter
+            2.5f,   //Saturn
+            0.8f,   //Uranus
+            1.8f    //Neptune
         };
 
         float[] rotationSpeeds =
@@ -293,8 +293,7 @@ namespace Project1NEA
                 return;
             }
 
-            // Escape returns to the menu rather than closing, so the user can
-            // always get back without losing the simulation.
+
             if (KeyboardState.IsKeyPressed(Keys.Escape))
             {
                 gameState = GameState.MainMenu;
@@ -437,7 +436,7 @@ namespace Project1NEA
 
                 shader.Use();
 
-                shader.SetInt("texture1", 0); // TextureUnit.Texture0
+                shader.SetInt("texture1", 0); //TextureUnit.Texture0
                 
             
             
@@ -466,8 +465,6 @@ namespace Project1NEA
             menu = new Menu();
             menu.Load(textRenderer);
 
-            // The pointer is only captured once the simulation starts, so the
-            // menu can be used normally.
             CursorState = CursorState.Normal;
 
 
@@ -621,7 +618,7 @@ namespace Project1NEA
                 GL.BindVertexArray(0);
                 GL.UseProgram(0);
 
-                // Delete all the resources.
+                //delete all the resources
                 GL.DeleteBuffer(VertexBufferObject);
                 GL.DeleteVertexArray(VertexArrayObject);
 
@@ -632,35 +629,23 @@ namespace Project1NEA
             #endregion
             #region Simulation helpers
 
-            /// <summary>
-            /// Elapsed simulation time. The offset keeps the planets away from
-            /// their shared starting line, so they are not all in a row.
-            /// </summary>
             private float SimulationTime
             {
                 get { return (float)_timer.Elapsed.TotalSeconds + 300; }
             }
 
-            /// <summary>
-            /// Works out where a planet is on its ellipse at the given time by
-            /// solving Kepler's equation, then tilts the result onto the
-            /// planet's own orbital plane.
-            /// </summary>
             private Vector3 GetPlanetPosition(int planetIndex, float time)
             {
                 float semiMajorAxis = semiMajorAxes[planetIndex];
                 float eccentricity = eccentricities[planetIndex];
 
-                // Inner planets move faster, so period scales the whole orbit.
+                //the inner planets move faster therefore the period scales the whole orbit.
                 float orbitalPeriod = orbitalPeriods[planetIndex] * 15.0f;
 
                 float meanMotion = MathF.PI * 2.0f / orbitalPeriod;
                 float meanAnomaly = meanMotion * time;
 
-                // Kepler's equation cannot be rearranged for the eccentric
-                // anomaly, so it is solved by Newton-Raphson iteration. Five
-                // passes is more than enough at these eccentricities, and a
-                // fixed count keeps every frame the same length.
+
                 float eccentricAnomaly = meanAnomaly;
 
                 for (int i = 0; i < 5; i++)
@@ -677,24 +662,18 @@ namespace Project1NEA
                 return new Vector3(x, z * MathF.Sin(inclination), z * MathF.Cos(inclination));
             }
 
-            /// <summary>
-            /// Called when the user chooses Start. Places the camera beside
-            /// Earth looking at it, captures the pointer, and resets the mouse
-            /// baseline so the view does not jump on the first movement.
-            /// </summary>
+
             private void EnterSimulation()
             {
                 Vector3 earthPosition = GetPlanetPosition(EarthIndex, SimulationTime);
 
-                // Stand off far enough that Earth is fully in view.
+
                 Vector3 offset = new Vector3(0.0f, 0.5f, 2.5f);
                 position = earthPosition + offset;
 
                 Vector3 towardsEarth = Vector3.Normalize(earthPosition - position);
                 cameraFront = towardsEarth;
 
-                // Keep pitch and yaw in step with the new direction, otherwise
-                // the next mouse movement would snap the view back.
                 pitch = MathHelper.RadiansToDegrees(MathF.Asin(towardsEarth.Y));
                 yaw = MathHelper.RadiansToDegrees(MathF.Atan2(towardsEarth.Z, towardsEarth.X));
 
@@ -710,11 +689,10 @@ namespace Project1NEA
 
                 for (int i = 0; i <= stacks; i++)
                 {
-                    // i == 0 is the north pole, i == stacks is the south pole.
+
                     float stackAngle = MathF.PI / 2 - i * MathF.PI / stacks;
 
-                    // The poles sit on the Y axis so that they line up with the
-                    // world's up vector and with the CreateRotationY axial spin.
+
                     float yPosition = radius * MathF.Sin(stackAngle);
                     float ringRadius = radius * MathF.Cos(stackAngle);
 
@@ -733,8 +711,6 @@ namespace Project1NEA
                         //texture coordinate section 
                         float textureU = (float)sectorIndex / sectors;
 
-                        // The image is flipped when it is loaded, so v = 1 is the top
-                        // row of the source map, which is where the north pole belongs.
                         float textureV = 1.0f - (float)i / stacks;
 
                         vertices.Add(textureU);

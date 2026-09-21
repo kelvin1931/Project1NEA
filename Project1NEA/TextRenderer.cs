@@ -4,15 +4,10 @@ using static Project1NEA.Shaders;
 
 namespace Project1NEA
 {
-    /// <summary>
-    /// Draws strings using a bitmap font atlas. The atlas holds the printable
-    /// ASCII characters in a fixed grid, so the cell for a character can be
-    /// calculated directly from its character code rather than searched for.
-    /// </summary>
+
     public class TextRenderer
     {
-        // The atlas covers ASCII 32 (space) to 127, laid out left to right and
-        // top to bottom, which is exactly 96 cells.
+
         private const int FirstCharacter = 32;
         private const int Columns = 16;
         private const int Rows = 6;
@@ -21,17 +16,14 @@ namespace Project1NEA
         private const int AtlasWidth = Columns * CellPixels;
         private const int AtlasHeight = Rows * CellPixels;
 
-        // Consolas is monospaced, so every glyph steps forward by the same
-        // amount. The font was drawn at 48pt into a 64px cell, giving a 26px
-        // advance, and this ratio keeps the spacing correct at any scale.
+ 
         private const float AdvanceRatio = 0.40625f;
 
-        // Half a texel. Without this a glyph samples the very edge of its cell
-        // and picks up a sliver of the neighbouring character.
+
         private const float Inset = 0.5f;
 
-        private const int FloatsPerVertex = 4;   // x, y, u, v
-        private const int VerticesPerGlyph = 6;  // two triangles
+        private const int FloatsPerVertex = 4;   
+        private const int VerticesPerGlyph = 6;  
 
         private readonly Shader shader;
         private readonly Texture atlas;
@@ -39,8 +31,7 @@ namespace Project1NEA
         private readonly int vao;
         private readonly int vbo;
 
-        // Reused between draw calls so that rendering text does not allocate
-        // a new array every frame.
+
         private float[] vertices = new float[0];
 
         private Matrix4 projection;
@@ -66,11 +57,7 @@ namespace Project1NEA
             shader.SetInt("fontAtlas", 0);
         }
 
-        /// <summary>
-        /// Rebuilds the screen-space projection. Text is positioned in pixels
-        /// with the origin at the top left, so it keeps its shape when the
-        /// window is resized rather than stretching with the aspect ratio.
-        /// </summary>
+ 
         public void Resize(int width, int height)
         {
             if (width <= 0 || height <= 0)
@@ -122,8 +109,7 @@ namespace Project1NEA
             {
                 int index = character - FirstCharacter;
 
-                // Anything outside the atlas is skipped, but still advances the
-                // cursor so the rest of the line stays aligned.
+
                 if (index < 0 || index >= Columns * Rows)
                 {
                     x += advance;
@@ -136,8 +122,6 @@ namespace Project1NEA
                 float u0 = (column * CellPixels + Inset) / AtlasWidth;
                 float u1 = ((column + 1) * CellPixels - Inset) / AtlasWidth;
 
-                // Textures are flipped vertically when they are loaded, so the
-                // top row of the atlas ends up at v = 1.
                 float v0 = 1.0f - (row * CellPixels + Inset) / AtlasHeight;
                 float v1 = 1.0f - ((row + 1) * CellPixels - Inset) / AtlasHeight;
 
@@ -162,8 +146,7 @@ namespace Project1NEA
                 return;
             }
 
-            // Glyphs are drawn from an alpha mask, so blending has to be on or
-            // the transparent part of every cell is drawn as a solid block.
+
             bool depthWasEnabled = GL.IsEnabled(EnableCap.DepthTest);
             GL.Disable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Blend);
@@ -178,7 +161,7 @@ namespace Project1NEA
             GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
             GL.BufferData(BufferTarget.ArrayBuffer, floatCount * sizeof(float), vertices, BufferUsageHint.DynamicDraw);
 
-            // The whole string is one draw call rather than one call per letter.
+
             GL.DrawArrays(PrimitiveType.Triangles, 0, floatCount / FloatsPerVertex);
 
             GL.Disable(EnableCap.Blend);
