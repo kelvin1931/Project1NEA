@@ -2,25 +2,16 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Project1NEA
-{
-    /// <summary>
-    /// The main menu and the screens reached from it. The menu decides which
-    /// state the program should be in next; the game window acts on that.
-    /// </summary>
+{ 
     public class Menu
     {
         private readonly string[] options = { "Start Simulation", "Controls", "Credits", "Exit" };
         private readonly string[] confirmOptions = { "Yes", "No" };
 
-        // The main menu and the exit prompt keep their own selection index.
-        // Sharing one index between them would mean opening the prompt with
-        // "Yes" or "No" highlighted according to whatever was chosen on the
-        // menu behind it.
+
         private int selectedOption = 0;
         private int confirmSelection = DefaultConfirmSelection;
 
-        // The prompt opens on "No" so that holding Enter cannot close the
-        // program by accident.
         private const int DefaultConfirmSelection = 1;
 
         private TextRenderer text;
@@ -205,8 +196,7 @@ namespace Project1NEA
                 bool isSelected = optionIndex == selectedOption;
                 float y = firstOptionY + optionIndex * spacing;
 
-                // The selected option is marked with arrows as well as colour,
-                // so it is still clear without relying on colour alone.
+               
                 string line = isSelected ? "> " + options[optionIndex] + " <" : options[optionIndex];
 
                 text.DrawCentred(line, centreX, y, optionScale,
@@ -224,8 +214,7 @@ namespace Project1NEA
 
             text.DrawCentred(title, centreX, height * 0.16f, 0.85f, TitleColour);
 
-            // The body is laid out from a common left edge so that the columns
-            // in the controls list line up.
+
             float widest = 0.0f;
             foreach (string line in lines)
             {
