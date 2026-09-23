@@ -263,7 +263,7 @@ namespace Project1NEA
 
             public static void Main(string[] args)
             {
-                using (Game game = new Game(1920, 1100, "GameWindow")) //1920 x 1200
+                using (Game game = new Game(2560, 1600, "GameWindow")) //1920 x 1200
                 {
                     game.Run();
                 }
@@ -293,6 +293,7 @@ namespace Project1NEA
                 return;
             }
 
+            // always get back without losing the simulation.
             if (KeyboardState.IsKeyPressed(Keys.Escape))
             {
                 gameState = GameState.MainMenu;
@@ -435,7 +436,7 @@ namespace Project1NEA
 
                 shader.Use();
 
-                shader.SetInt("texture1", 0); // TextureUnit.Texture0
+                shader.SetInt("texture1", 0); //TextureUnit.Texture0
                 
             
             
@@ -464,8 +465,6 @@ namespace Project1NEA
             menu = new Menu();
             menu.Load(textRenderer);
 
-            // The pointer is only captured once the simulation starts, so the
-            // menu can be used normally.
             CursorState = CursorState.Normal;
 
 
@@ -618,7 +617,7 @@ namespace Project1NEA
                 GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
                 GL.BindVertexArray(0);
                 GL.UseProgram(0);
-
+                // Delete all the resources.
                 GL.DeleteBuffer(VertexBufferObject);
                 GL.DeleteVertexArray(VertexArrayObject);
 
@@ -629,7 +628,10 @@ namespace Project1NEA
             #endregion
             #region Simulation helpers
 
-
+            /// <summary>
+            /// Elapsed simulation time. The offset keeps the planets away from
+            /// their shared starting line, so they are not all in a row.
+            /// </summary>
             private float SimulationTime
             {
                 get { return (float)_timer.Elapsed.TotalSeconds + 300; }
@@ -640,13 +642,16 @@ namespace Project1NEA
                 float semiMajorAxis = semiMajorAxes[planetIndex];
                 float eccentricity = eccentricities[planetIndex];
 
-                // Inner planets move faster, so period scales the whole orbit.
+                //the inner planets move faster therefore the period scales the whole orbit.
                 float orbitalPeriod = orbitalPeriods[planetIndex] * 15.0f;
-
+         
                 float meanMotion = MathF.PI * 2.0f / orbitalPeriod;
                 float meanAnomaly = meanMotion * time;
 
-         
+                // Kepler's equation cannot be rearranged for the eccentric
+                // anomaly, so it is solved by Newton-Raphson iteration. Five
+                // passes is more than enough at these eccentricities, and a
+                // fixed count keeps every frame the same length.
                 float eccentricAnomaly = meanAnomaly;
 
                 for (int i = 0; i < 5; i++)
@@ -656,18 +661,22 @@ namespace Project1NEA
 
                 float x = semiMajorAxis * (MathF.Cos(eccentricAnomaly) - eccentricity);
                 float z = semiMajorAxis * MathF.Sqrt(1.0f - eccentricity * eccentricity) * MathF.Sin(eccentricAnomaly);
-
+      
                 float inclination = MathHelper.DegreesToRadians(inclinations[planetIndex]);
 
                 // tilt orbit plane
                 return new Vector3(x, z * MathF.Sin(inclination), z * MathF.Cos(inclination));
-            }
 
-      
+            /// <summary>
+            /// Called when the user chooses Start. Places the camera beside
+            /// Earth looking at it, captures the pointer, and resets the mouse
+            /// baseline so the view does not jump on the first movement.
+            /// </summary>
             private void EnterSimulation()
             {
                 Vector3 earthPosition = GetPlanetPosition(EarthIndex, SimulationTime);
 
+                // Stand off far enough that Earth is fully in view.
                 Vector3 offset = new Vector3(0.0f, 0.5f, 2.5f);
                 position = earthPosition + offset;
 
@@ -678,10 +687,8 @@ namespace Project1NEA
                 yaw = MathHelper.RadiansToDegrees(MathF.Atan2(towardsEarth.Z, towardsEarth.X));
 
                 firstMove = true;
-                CursorState = CursorState.Grabbed;
             }
 
-            #endregion
             #region CreateSphere
             private float[] CreateSphere(float radius, int stacks, int sectors)
             {
@@ -689,8 +696,11 @@ namespace Project1NEA
 
                 for (int i = 0; i <= stacks; i++)
                 {
+                    // i == 0 is the north pole, i == stacks is the south pole.
                     float stackAngle = MathF.PI / 2 - i * MathF.PI / stacks;
 
+                    // The poles sit on the Y axis so that they line up with the
+                    // world's up vector and with the CreateRotationY axial spin.
                     float yPosition = radius * MathF.Sin(stackAngle);
                     float ringRadius = radius * MathF.Cos(stackAngle);
 
