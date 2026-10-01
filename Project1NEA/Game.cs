@@ -5,8 +5,11 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Project1NEA;
+using System;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using static Project1NEA.Shaders;
 using static System.Net.Mime.MediaTypeNames;
 namespace Project1NEA
@@ -16,8 +19,8 @@ namespace Project1NEA
 
     #region variables
     private Shader shader;
-
-            private int VertexBufferObject;
+            private float simulationTime = 300f;
+             private int VertexBufferObject;
             private int VertexArrayObject;
             private int ElementBufferObject;
             private int _vao;
@@ -25,8 +28,9 @@ namespace Project1NEA
             private int _ebo;
             private Menu menu;
             private TextRenderer textRenderer;
-
-            // Earth is index 2 of the orbital data arrays.
+            private bool IsPaused = false;
+        private bool _isKeyPressed =  false;
+            //Earth is index 2 of the orbital data arrays.
             private const int EarthIndex = 2;
             private Stopwatch _timer;
             private GameState gameState = GameState.MainMenu;
@@ -292,6 +296,7 @@ namespace Project1NEA
 
                 return;
             }
+            
 
 
             if (KeyboardState.IsKeyPressed(Keys.Escape))
@@ -317,6 +322,15 @@ namespace Project1NEA
                 }
 
                 if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.W))
+                {
+                    position += cameraFront * movementSpeed * 10 * (float)args.Time; //Speed forward 
+                }
+                
+
+                if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.S))
+                {
+                    position -= cameraFront * movementSpeed * 10 * (float)args.Time; //Speed Backwards 
+                }if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.W))
                 {
                     position += cameraFront * movementSpeed * 10 * (float)args.Time; //Speed forward 
                 }
@@ -363,7 +377,39 @@ namespace Project1NEA
                 {
                     position -= worldUp * movementSpeed * (float)args.Time; //down
                 }
+                if (KeyboardState.IsKeyDown(Keys.P))
+                {
+                    bool pause = true;
+                    if (KeyboardState.IsKeyDown(Keys.P))
+                    {
+                        if (!_isKeyPressed)
+                        {
+                            IsPaused = !IsPaused;
+                            _isKeyPressed = true;
+                            Console.WriteLine($"Paused: {IsPaused}");
+                        }
+                    }
+                }
+                else
+                {
+                   
+                        float theTimeMultiplier = IsPaused ? 0.0f : 1.0f;
+                        // the first one (0.0f) means if it is true, then it will set the multiplier to zero, the (1.0) is vice versa
 
+                        simulationTime += (float)args.Time * theTimeMultiplier;
+                    {
+                        if (KeyboardState.IsKeyDown(Keys.O))
+                        {
+                            _isKeyPressed = false;
+                        }
+                        else
+                        {
+                            _isKeyPressed = true;
+                        }
+                    }
+                }
+
+                
 
                 cameraFront = Vector3.Normalize(cameraFront);
                 var mouse = MouseState.Position;
@@ -558,17 +604,25 @@ namespace Project1NEA
                     {
                         texture10.Use(TextureUnit.Texture0);
                     }
+
+
                     float time = SimulationTime;
                     float scale = planetScales[planetIndex];
 
-                    Vector3 orbitPosition = GetPlanetPosition(planetIndex, time);
+                    
+
+                    IsPaused = false;
+
+
+
+                    Vector3 orbitPosition = GetPlanetPosition(planetIndex, simulationTime);
 
 
                     //modl matrix
 
                     Matrix4 scaleMatrix = Matrix4.CreateScale(scale);
 
-                    Matrix4 rotation = Matrix4.CreateRotationY(time * rotationSpeeds[planetIndex]);
+                    Matrix4 rotation = Matrix4.CreateRotationY(simulationTime * rotationSpeeds[planetIndex]);
 
                     Matrix4 translation = Matrix4.CreateTranslation(orbitPosition);
 
@@ -632,35 +686,40 @@ namespace Project1NEA
             private float SimulationTime
             {
                 get { return (float)_timer.Elapsed.TotalSeconds + 300; }
+
             }
 
-            private Vector3 GetPlanetPosition(int planetIndex, float time)
-            {
-                float semiMajorAxis = semiMajorAxes[planetIndex];
-                float eccentricity = eccentricities[planetIndex];
+                private Vector3 GetPlanetPosition(int planetIndex, float simulationTime)
+                {
+                    float semiMajorAxis = semiMajorAxes[planetIndex];
+                    float eccentricity = eccentricities[planetIndex];
 
                 //the inner planets move faster therefore the period scales the whole orbit.
-                float orbitalPeriod = orbitalPeriods[planetIndex] * 15.0f;
+                    float orbitalPeriod = orbitalPeriods[planetIndex] * 15.0f;
 
-                float meanMotion = MathF.PI * 2.0f / orbitalPeriod;
-                float meanAnomaly = meanMotion * time;
+                    float meanMotion = MathF.PI * 2.0f / orbitalPeriod;
+                    float meanAnomaly= meanMotion * simulationTime;
+                    float eccentricAnomaly =meanAnomaly;
+            float currentEccen = eccentricAnomaly;
+                    for(int i = 0; i < 5; i++)
+                    {
+                        eccentricAnomaly = eccentricAnomaly - (eccentricAnomaly - eccentricity * MathF.Sin(eccentricAnomaly) - meanAnomaly) / (1.0f - eccentricity * MathF.Cos(eccentricAnomaly));
+                    }
+                    float x = semiMajorAxis * (MathF.Cos(eccentricAnomaly) - eccentricity);
+                    float z = semiMajorAxis * MathF.Sqrt(1.0f - eccentricity * eccentricity) * MathF.Sin(eccentricAnomaly);
+
+                    float inclination = MathHelper.DegreesToRadians(inclinations[planetIndex]);
+
+                        
 
 
-                float eccentricAnomaly = meanAnomaly;
-
-                for (int i = 0; i < 5; i++)
-                {
-                    eccentricAnomaly = eccentricAnomaly - (eccentricAnomaly - eccentricity * MathF.Sin(eccentricAnomaly) - meanAnomaly) / (1.0f - eccentricity * MathF.Cos(eccentricAnomaly));
-                }
-
-                float x = semiMajorAxis * (MathF.Cos(eccentricAnomaly) - eccentricity);
-                float z = semiMajorAxis * MathF.Sqrt(1.0f - eccentricity * eccentricity) * MathF.Sin(eccentricAnomaly);
-
-                float inclination = MathHelper.DegreesToRadians(inclinations[planetIndex]);
-
-                // tilt orbit plane
+                //tilt orbit plane
                 return new Vector3(x, z * MathF.Sin(inclination), z * MathF.Cos(inclination));
-            }
+                }
+                
+        
+
+
 
 
             private void EnterSimulation()
