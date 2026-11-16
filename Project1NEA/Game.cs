@@ -5,8 +5,11 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Project1NEA;
+using System;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using static Project1NEA.Shaders;
 using static System.Net.Mime.MediaTypeNames;
 namespace Project1NEA
@@ -16,8 +19,8 @@ namespace Project1NEA
 
     #region variables
     private Shader shader;
-
-            private int VertexBufferObject;
+            private float simulationTime = 300f;
+             private int VertexBufferObject;
             private int VertexArrayObject;
             private int ElementBufferObject;
             private int _vao;
@@ -25,8 +28,9 @@ namespace Project1NEA
             private int _ebo;
             private Menu menu;
             private TextRenderer textRenderer;
-
-            // Earth is index 2 of the orbital data arrays.
+            private bool IsPaused = false;
+            private bool _isKeyPressed =  false;
+            //Earth is index 2 of the orbital data arrays.
             private const int EarthIndex = 2;
             private Stopwatch _timer;
             private GameState gameState = GameState.MainMenu;
@@ -270,7 +274,7 @@ namespace Project1NEA
             }
             #endregion
 
-            #region UpdateFrame
+            #region OnUpdateFrame
 
             protected override void OnUpdateFrame(FrameEventArgs args)
             {
@@ -292,6 +296,7 @@ namespace Project1NEA
 
                 return;
             }
+            
 
             // always get back without losing the simulation.
             if (KeyboardState.IsKeyPressed(Keys.Escape))
@@ -317,6 +322,15 @@ namespace Project1NEA
                 }
 
                 if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.W))
+                {
+                    position += cameraFront * movementSpeed * 10 * (float)args.Time; //Speed forward 
+                }
+
+
+                if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.S))
+                {
+                    position -= cameraFront * movementSpeed * 10 * (float)args.Time; //Speed Backwards 
+                } if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.W))
                 {
                     position += cameraFront * movementSpeed * 10 * (float)args.Time; //Speed forward 
                 }
@@ -364,9 +378,44 @@ namespace Project1NEA
                     position -= worldUp * movementSpeed * (float)args.Time; //down
                 }
 
+                if (KeyboardState.IsKeyDown(Keys.P))
+                {
+                    if (!_isKeyPressed)
+                    {
+                        IsPaused = !IsPaused;
+                        _isKeyPressed = true;
+                        Console.WriteLine($"Paused: {IsPaused}");
+                    }
+                }
+                else
+                {
+                    _isKeyPressed = false;
+                }
+                float theTimeMultiplier = IsPaused ? 0.0f : 1.0f;
+                // the first one (0.0f) means if it is true, then it will set the multiplier to zero, the (1.0) is vice versa
 
-                cameraFront = Vector3.Normalize(cameraFront);
-                var mouse = MouseState.Position;
+                simulationTime += (float)args.Time * theTimeMultiplier;
+
+                bool speedKey = false;
+                
+                bool speedUp = true;
+                if(KeyboardState.IsKeyDown(Keys.O))
+                {
+                    if (!speedUp)
+                    {
+                        speedKey = !speedKey;
+                        simulationTime += (float)args.Time * 2;
+                    }
+                    else
+                    {
+                        speedUp = false;
+                    }
+                    
+
+                }
+
+        cameraFront = Vector3.Normalize(cameraFront);
+                Vector2 mouse = MouseState.Position;
 
                 if (firstMove)
                 {
@@ -391,7 +440,7 @@ namespace Project1NEA
                     cameraFront.Y = (float)Math.Sin(MathHelper.DegreesToRadians(pitch));
                     cameraFront.Z = (float)Math.Cos(MathHelper.DegreesToRadians(pitch)) * (float)Math.Sin(MathHelper.DegreesToRadians(yaw));
                 }
-
+                
                 cameraFront = Vector3.Normalize(cameraFront);
             }
         }
@@ -439,7 +488,7 @@ namespace Project1NEA
                 shader.SetInt("texture1", 0); //TextureUnit.Texture0
                 
             
-            
+            //fun fact: garden snails have more than 10000 teeth
             
             texture = new Texture("Textures/sunTex.png");
             texture2 = new Texture("Textures/starfinale.png");
@@ -481,7 +530,7 @@ namespace Project1NEA
 
             }
         #endregion
-        #region RenderFrame
+        #region OnRenderFrame
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
@@ -505,6 +554,9 @@ namespace Project1NEA
 
                 shader.SetMatrix4("view", view);
                 shader.SetMatrix4("projection", projection);
+                shader.SetVector3("lightPos", Vector3.Zero);
+                shader.SetVector3("lightColor", new Vector3(1f, 1f, 1f));
+                shader.SetInt("unlit", 1);
 
                 GL.BindVertexArray(_vao);
 
@@ -519,10 +571,10 @@ namespace Project1NEA
 
                 // the SUN
                 texture.Use(TextureUnit.Texture0);
-                Matrix4 sunModel = Matrix4.CreateScale(1.5f);
+                Matrix4 sunModel = Matrix4.CreateScale(3f);
                 shader.SetMatrix4("model", sunModel);
                 GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
-
+                shader.SetInt("unlit", 0);
 
                 for (int planetIndex = 0; planetIndex < semiMajorAxes.Length; planetIndex++)
                 {
@@ -558,17 +610,25 @@ namespace Project1NEA
                     {
                         texture10.Use(TextureUnit.Texture0);
                     }
+
+
                     float time = SimulationTime;
                     float scale = planetScales[planetIndex];
 
-                    Vector3 orbitPosition = GetPlanetPosition(planetIndex, time);
+                    
+
+                    
+
+
+
+                    Vector3 orbitPosition = GetPlanetPosition(planetIndex, simulationTime);
 
 
                     //modl matrix
 
                     Matrix4 scaleMatrix = Matrix4.CreateScale(scale);
 
-                    Matrix4 rotation = Matrix4.CreateRotationY(time * rotationSpeeds[planetIndex]);
+                    Matrix4 rotation = Matrix4.CreateRotationY(simulationTime * rotationSpeeds[planetIndex]);
 
                     Matrix4 translation = Matrix4.CreateTranslation(orbitPosition);
 
@@ -635,37 +695,41 @@ namespace Project1NEA
             private float SimulationTime
             {
                 get { return (float)_timer.Elapsed.TotalSeconds + 300; }
+
             }
 
-            private Vector3 GetPlanetPosition(int planetIndex, float time)
-            {
-                float semiMajorAxis = semiMajorAxes[planetIndex];
-                float eccentricity = eccentricities[planetIndex];
+                private Vector3 GetPlanetPosition(int planetIndex, float simulationTime)
+                {
+                    float semiMajorAxis = semiMajorAxes[planetIndex];
+                    float eccentricity = eccentricities[planetIndex];
 
                 //the inner planets move faster therefore the period scales the whole orbit.
-                float orbitalPeriod = orbitalPeriods[planetIndex] * 15.0f;
-         
-                float meanMotion = MathF.PI * 2.0f / orbitalPeriod;
-                float meanAnomaly = meanMotion * time;
+                    float orbitalPeriod = orbitalPeriods[planetIndex] * 15.0f;
 
-                // Kepler's equation cannot be rearranged for the eccentric
-                // anomaly, so it is solved by Newton-Raphson iteration. Five
-                // passes is more than enough at these eccentricities, and a
-                // fixed count keeps every frame the same length.
-                float eccentricAnomaly = meanAnomaly;
+                    float meanMotion = MathF.PI * 2.0f / orbitalPeriod;
+                    float meanAnomaly= meanMotion * simulationTime;
+                    float eccentricAnomaly =meanAnomaly;
+            float currentEccen = eccentricAnomaly;
+                    for(int i = 0; i < 5; i++)
+                    {
+                        eccentricAnomaly = eccentricAnomaly - (eccentricAnomaly - eccentricity * MathF.Sin(eccentricAnomaly) - meanAnomaly) / (1.0f - eccentricity * MathF.Cos(eccentricAnomaly));
+                    }
+                    float x = semiMajorAxis * (MathF.Cos(eccentricAnomaly) - eccentricity);
+                    float z = semiMajorAxis * MathF.Sqrt(1.0f - eccentricity * eccentricity) * MathF.Sin(eccentricAnomaly);
 
-                for (int i = 0; i < 5; i++)
-                {
-                    eccentricAnomaly = eccentricAnomaly - (eccentricAnomaly - eccentricity * MathF.Sin(eccentricAnomaly) - meanAnomaly) / (1.0f - eccentricity * MathF.Cos(eccentricAnomaly));
-                }
+                    float inclination = MathHelper.DegreesToRadians(inclinations[planetIndex]);
 
-                float x = semiMajorAxis * (MathF.Cos(eccentricAnomaly) - eccentricity);
-                float z = semiMajorAxis * MathF.Sqrt(1.0f - eccentricity * eccentricity) * MathF.Sin(eccentricAnomaly);
-      
-                float inclination = MathHelper.DegreesToRadians(inclinations[planetIndex]);
+                        
 
-                // tilt orbit plane
+
+                //tilt orbit plane
                 return new Vector3(x, z * MathF.Sin(inclination), z * MathF.Cos(inclination));
+                }
+                
+        
+
+
+
 
             /// <summary>
             /// Called when the user chooses Start. Places the camera beside
@@ -716,8 +780,30 @@ namespace Project1NEA
                         vertices.Add(yPosition);
                         vertices.Add(zPosition);
 
-                        //texture coordinate section 
-                        float textureU = (float)sectorIndex / sectors;
+                    bool collision = true;
+                    bool stopPlayer = false;
+                    if ((cameraPos.X == xPosition) && (cameraPos.Z == zPosition) && (cameraPos.Y == yPosition))
+                    {
+                        collision = false;
+                        if (!collision)
+                        {
+                            stopPlayer = !stopPlayer;
+                            Console.WriteLine($"stopPlayer: {stopPlayer}");
+                        }
+                    }
+                    else
+                    {
+
+                        collision = true;
+                        stopPlayer = false;
+                    }
+                    movementSpeed = stopPlayer ? 0.0f : 1.0f;
+
+
+
+
+                    
+                    float textureU = (float)sectorIndex / sectors;
 
                         float textureV = 1.0f - (float)i / stacks;
 
