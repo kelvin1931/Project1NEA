@@ -9,7 +9,7 @@ uniform vec4 textColour;
 
 void main()
 {
-
+   
     float glyph = texture(fontAtlas, texCoord).a;
     outputColor = vec4(textColour.rgb, textColour.a * glyph);
 }

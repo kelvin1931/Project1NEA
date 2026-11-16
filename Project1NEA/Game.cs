@@ -298,7 +298,7 @@ namespace Project1NEA
             }
             
 
-
+            // always get back without losing the simulation.
             if (KeyboardState.IsKeyPressed(Keys.Escape))
             {
                 gameState = GameState.MainMenu;
@@ -677,8 +677,7 @@ namespace Project1NEA
                 GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
                 GL.BindVertexArray(0);
                 GL.UseProgram(0);
-
-                //delete all the resources
+                // Delete all the resources.
                 GL.DeleteBuffer(VertexBufferObject);
                 GL.DeleteVertexArray(VertexArrayObject);
 
@@ -689,6 +688,10 @@ namespace Project1NEA
             #endregion
             #region Simulation helpers
 
+            /// <summary>
+            /// Elapsed simulation time. The offset keeps the planets away from
+            /// their shared starting line, so they are not all in a row.
+            /// </summary>
             private float SimulationTime
             {
                 get { return (float)_timer.Elapsed.TotalSeconds + 300; }
@@ -728,11 +731,16 @@ namespace Project1NEA
 
 
 
+            /// <summary>
+            /// Called when the user chooses Start. Places the camera beside
+            /// Earth looking at it, captures the pointer, and resets the mouse
+            /// baseline so the view does not jump on the first movement.
+            /// </summary>
             private void EnterSimulation()
             {
                 Vector3 earthPosition = GetPlanetPosition(EarthIndex, SimulationTime);
 
-
+                // Stand off far enough that Earth is fully in view.
                 Vector3 offset = new Vector3(0.0f, 0.5f, 2.5f);
                 position = earthPosition + offset;
 
@@ -743,10 +751,8 @@ namespace Project1NEA
                 yaw = MathHelper.RadiansToDegrees(MathF.Atan2(towardsEarth.Z, towardsEarth.X));
 
                 firstMove = true;
-                CursorState = CursorState.Grabbed;
             }
 
-            #endregion
             #region CreateSphere
             private float[] CreateSphere(float radius, int stacks, int sectors)
             {
@@ -754,10 +760,11 @@ namespace Project1NEA
 
                 for (int i = 0; i <= stacks; i++)
                 {
-
+                    // i == 0 is the north pole, i == stacks is the south pole.
                     float stackAngle = MathF.PI / 2 - i * MathF.PI / stacks;
 
-
+                    // The poles sit on the Y axis so that they line up with the
+                    // world's up vector and with the CreateRotationY axial spin.
                     float yPosition = radius * MathF.Sin(stackAngle);
                     float ringRadius = radius * MathF.Cos(stackAngle);
 

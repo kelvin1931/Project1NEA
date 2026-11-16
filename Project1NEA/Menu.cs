@@ -2,18 +2,16 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Project1NEA
-{
-
+{ 
     public class Menu
     {
         private readonly string[] options = { "Start Simulation", "Controls", "Credits", "Exit" };
         private readonly string[] confirmOptions = { "Yes", "No" };
 
- 
+
         private int selectedOption = 0;
         private int confirmSelection = DefaultConfirmSelection;
 
-  
         private const int DefaultConfirmSelection = 1;
 
         private TextRenderer text;
@@ -199,7 +197,7 @@ namespace Project1NEA
                 bool isSelected = optionIndex == selectedOption;
                 float y = firstOptionY + optionIndex * spacing;
 
-
+               
                 string line = isSelected ? "> " + options[optionIndex] + " <" : options[optionIndex];
 
                 text.DrawCentred(line, centreX, y, optionScale,
@@ -216,6 +214,7 @@ namespace Project1NEA
             float spacing = text.LineHeight(bodyScale) * 1.15f;
 
             text.DrawCentred(title, centreX, height * 0.16f, 0.85f, TitleColour);
+
 
             float widest = 0.0f;
             foreach (string line in lines)

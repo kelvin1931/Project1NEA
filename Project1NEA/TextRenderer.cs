@@ -7,7 +7,7 @@ namespace Project1NEA
 
     public class TextRenderer
     {
-
+     
         private const int FirstCharacter = 32;
         private const int Columns = 16;
         private const int Rows = 6;
@@ -16,14 +16,13 @@ namespace Project1NEA
         private const int AtlasWidth = Columns * CellPixels;
         private const int AtlasHeight = Rows * CellPixels;
 
- 
+      
         private const float AdvanceRatio = 0.40625f;
-
 
         private const float Inset = 0.5f;
 
         private const int FloatsPerVertex = 4;   
-        private const int VerticesPerGlyph = 6;  
+        private const int VerticesPerGlyph = 6; 
 
         private readonly Shader shader;
         private readonly Texture atlas;
@@ -31,7 +30,7 @@ namespace Project1NEA
         private readonly int vao;
         private readonly int vbo;
 
-
+.
         private float[] vertices = new float[0];
 
         private Matrix4 projection;
@@ -57,7 +56,7 @@ namespace Project1NEA
             shader.SetInt("fontAtlas", 0);
         }
 
- 
+        
         public void Resize(int width, int height)
         {
             if (width <= 0 || height <= 0)
@@ -109,7 +108,7 @@ namespace Project1NEA
             {
                 int index = character - FirstCharacter;
 
-
+     
                 if (index < 0 || index >= Columns * Rows)
                 {
                     x += advance;
@@ -146,7 +145,6 @@ namespace Project1NEA
                 return;
             }
 
-
             bool depthWasEnabled = GL.IsEnabled(EnableCap.DepthTest);
             GL.Disable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Blend);
@@ -160,7 +158,6 @@ namespace Project1NEA
             GL.BindVertexArray(vao);
             GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
             GL.BufferData(BufferTarget.ArrayBuffer, floatCount * sizeof(float), vertices, BufferUsageHint.DynamicDraw);
-
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, floatCount / FloatsPerVertex);
 

@@ -28,16 +28,12 @@ namespace Project1NEA
             GL.BindTexture(TextureTarget.Texture2D, Handle);
         }
 
-
         public Texture(string path, bool generateMipmaps = true)
         {
-
             int textureHandle = GL.GenTexture();
             Handle = textureHandle;
 
             GL.BindTexture(TextureTarget.Texture2D, Handle);
-
-
 
             TextureWrapMode wrapMode = generateMipmaps ? TextureWrapMode.Repeat : TextureWrapMode.ClampToEdge;
             TextureMinFilter minFilter = generateMipmaps ? TextureMinFilter.LinearMipmapLinear : TextureMinFilter.Linear;
@@ -52,13 +48,7 @@ namespace Project1NEA
             ImageResult image = ImageResult.FromStream(fileStream, ColorComponents.RedGreenBlueAlpha);
             fileStream.Close();
 
-
-
-
             GL.TexImage2D(TextureTarget.Texture2D,0, PixelInternalFormat.Rgba, image.Width, image.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
-
-
-
 
             if (generateMipmaps)
             {
