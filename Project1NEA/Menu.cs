@@ -34,6 +34,7 @@ namespace Project1NEA
             "Left Ctrl         Move faster",
             "Right Shift       Reset the camera position",
             "Escape            Return to the main menu",
+            "P                 Toggle pause  /  unpause", 
         };
 
         private readonly string[] creditsLines =
@@ -239,8 +240,8 @@ namespace Project1NEA
 
             text.DrawCentred("Are you sure you want to exit?", centreX, height * 0.38f, 0.58f, TitleColour);
 
-            float optionScale = 0.62f;
-            float gap = 160.0f;
+            float scaleoption = 0.62f;
+            float Gapsize = 160.0f;
             float y = height * 0.52f;
 
             for (int optionIndex = 0; optionIndex < confirmOptions.Length; optionIndex++)
@@ -248,9 +249,9 @@ namespace Project1NEA
                 bool isSelected = optionIndex == confirmSelection;
                 string line = isSelected ? "> " + confirmOptions[optionIndex] + " <" : confirmOptions[optionIndex];
 
-                float x = centreX + (optionIndex == 0 ? -gap : gap);
+                float x = centreX + (optionIndex == 0 ? -Gapsize : Gapsize);
 
-                text.DrawCentred(line, x, y, optionScale,
+                text.DrawCentred(line, x, y, scaleoption,
                     isSelected ? SelectedColour : NormalColour);
             }
 

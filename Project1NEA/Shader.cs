@@ -63,6 +63,8 @@ namespace Project1NEA
                 GL.DeleteShader(FragmentShader);
                 GL.DeleteShader(VertexShader);
             }
+           
+
             public void Use()
             {
                 GL.UseProgram(Handle);
@@ -116,7 +118,17 @@ namespace Project1NEA
                 int location = GL.GetUniformLocation(Handle, name);
                 GL.Uniform2(location, vector);
             }
+            public void SetVector3(string name, Vector3 vector)
+            {
+                int location = GL.GetUniformLocation(Handle, name);
+                GL.Uniform3(location, vector);
+            }
 
+            public void SetFloat(string name, float value)
+            {
+                int location = GL.GetUniformLocation(Handle, name);
+                GL.Uniform1(location, value);
+            }
             public void SetVector4(string name, Vector4 vector)
             {
                 int location = GL.GetUniformLocation(Handle, name);
