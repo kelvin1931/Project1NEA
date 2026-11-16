@@ -752,9 +752,9 @@ namespace Project1NEA
 
                 firstMove = true;
             }
-
-            #region CreateSphere
-            private float[] CreateSphere(float radius, int stacks, int sectors)
+        #endregion
+        #region CreateSphere
+        private float[] CreateSphere(float radius, int stacks, int sectors)
             {
                 List<float> vertices = new List<float>();
 

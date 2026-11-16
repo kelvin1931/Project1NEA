@@ -30,7 +30,7 @@ namespace Project1NEA
         private readonly int vao;
         private readonly int vbo;
 
-.
+
         private float[] vertices = new float[0];
 
         private Matrix4 projection;
