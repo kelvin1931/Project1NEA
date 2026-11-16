@@ -112,7 +112,7 @@ namespace Project1NEA
                 int location = GL.GetUniformLocation(Handle, name);
                 GL.Uniform1(location, value);
             }
-
+            //hi
             public void SetVector2(string name, Vector2 vector)
             {
                 int location = GL.GetUniformLocation(Handle, name);
