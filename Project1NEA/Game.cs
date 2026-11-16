@@ -29,7 +29,7 @@ namespace Project1NEA
             private Menu menu;
             private TextRenderer textRenderer;
             private bool IsPaused = false;
-            private bool _isKeyPressed =  false;
+        private bool _isKeyPressed =  false;
             //Earth is index 2 of the orbital data arrays.
             private const int EarthIndex = 2;
             private Stopwatch _timer;
@@ -274,7 +274,7 @@ namespace Project1NEA
             }
             #endregion
 
-            #region OnUpdateFrame
+            #region UpdateFrame
 
             protected override void OnUpdateFrame(FrameEventArgs args)
             {
@@ -325,12 +325,12 @@ namespace Project1NEA
                 {
                     position += cameraFront * movementSpeed * 10 * (float)args.Time; //Speed forward 
                 }
-
+                
 
                 if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.S))
                 {
                     position -= cameraFront * movementSpeed * 10 * (float)args.Time; //Speed Backwards 
-                } if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.W))
+                }if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.W))
                 {
                     position += cameraFront * movementSpeed * 10 * (float)args.Time; //Speed forward 
                 }
@@ -377,45 +377,42 @@ namespace Project1NEA
                 {
                     position -= worldUp * movementSpeed * (float)args.Time; //down
                 }
-
                 if (KeyboardState.IsKeyDown(Keys.P))
                 {
-                    if (!_isKeyPressed)
+                    bool pause = true;
+                    if (KeyboardState.IsKeyDown(Keys.P))
                     {
-                        IsPaused = !IsPaused;
-                        _isKeyPressed = true;
-                        Console.WriteLine($"Paused: {IsPaused}");
+                        if (!_isKeyPressed)
+                        {
+                            IsPaused = !IsPaused;
+                            _isKeyPressed = true;
+                            Console.WriteLine($"Paused: {IsPaused}");
+                        }
                     }
                 }
                 else
                 {
-                    _isKeyPressed = false;
+                   
+                        float theTimeMultiplier = IsPaused ? 0.0f : 1.0f;
+                        // the first one (0.0f) means if it is true, then it will set the multiplier to zero, the (1.0) is vice versa
+
+                        simulationTime += (float)args.Time * theTimeMultiplier;
+                    {
+                        if (KeyboardState.IsKeyDown(Keys.O))
+                        {
+                            _isKeyPressed = false;
+                        }
+                        else
+                        {
+                            _isKeyPressed = true;
+                        }
+                    }
                 }
-                float theTimeMultiplier = IsPaused ? 0.0f : 1.0f;
-                // the first one (0.0f) means if it is true, then it will set the multiplier to zero, the (1.0) is vice versa
 
-                simulationTime += (float)args.Time * theTimeMultiplier;
-
-                bool speedKey = false;
                 
-                bool speedUp = true;
-                if(KeyboardState.IsKeyDown(Keys.O))
-                {
-                    if (!speedUp)
-                    {
-                        speedKey = !speedKey;
-                        simulationTime += (float)args.Time * 2;
-                    }
-                    else
-                    {
-                        speedUp = false;
-                    }
-                    
 
-                }
-
-        cameraFront = Vector3.Normalize(cameraFront);
-                Vector2 mouse = MouseState.Position;
+                cameraFront = Vector3.Normalize(cameraFront);
+                var mouse = MouseState.Position;
 
                 if (firstMove)
                 {
@@ -440,7 +437,7 @@ namespace Project1NEA
                     cameraFront.Y = (float)Math.Sin(MathHelper.DegreesToRadians(pitch));
                     cameraFront.Z = (float)Math.Cos(MathHelper.DegreesToRadians(pitch)) * (float)Math.Sin(MathHelper.DegreesToRadians(yaw));
                 }
-                
+
                 cameraFront = Vector3.Normalize(cameraFront);
             }
         }
@@ -488,7 +485,7 @@ namespace Project1NEA
                 shader.SetInt("texture1", 0); //TextureUnit.Texture0
                 
             
-            //fun fact: garden snails have more than 10000 teeth
+            
             
             texture = new Texture("Textures/sunTex.png");
             texture2 = new Texture("Textures/starfinale.png");
@@ -530,7 +527,7 @@ namespace Project1NEA
 
             }
         #endregion
-        #region OnRenderFrame
+        #region RenderFrame
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
@@ -554,9 +551,6 @@ namespace Project1NEA
 
                 shader.SetMatrix4("view", view);
                 shader.SetMatrix4("projection", projection);
-                shader.SetVector3("lightPos", Vector3.Zero);
-                shader.SetVector3("lightColor", new Vector3(1f, 1f, 1f));
-                shader.SetInt("unlit", 1);
 
                 GL.BindVertexArray(_vao);
 
@@ -571,10 +565,10 @@ namespace Project1NEA
 
                 // the SUN
                 texture.Use(TextureUnit.Texture0);
-                Matrix4 sunModel = Matrix4.CreateScale(3f);
+                Matrix4 sunModel = Matrix4.CreateScale(1.5f);
                 shader.SetMatrix4("model", sunModel);
                 GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
-                shader.SetInt("unlit", 0);
+
 
                 for (int planetIndex = 0; planetIndex < semiMajorAxes.Length; planetIndex++)
                 {
@@ -617,7 +611,7 @@ namespace Project1NEA
 
                     
 
-                    
+                    IsPaused = false;
 
 
 
@@ -780,30 +774,8 @@ namespace Project1NEA
                         vertices.Add(yPosition);
                         vertices.Add(zPosition);
 
-                    bool collision = true;
-                    bool stopPlayer = false;
-                    if ((cameraPos.X == xPosition) && (cameraPos.Z == zPosition) && (cameraPos.Y == yPosition))
-                    {
-                        collision = false;
-                        if (!collision)
-                        {
-                            stopPlayer = !stopPlayer;
-                            Console.WriteLine($"stopPlayer: {stopPlayer}");
-                        }
-                    }
-                    else
-                    {
-
-                        collision = true;
-                        stopPlayer = false;
-                    }
-                    movementSpeed = stopPlayer ? 0.0f : 1.0f;
-
-
-
-
-                    
-                    float textureU = (float)sectorIndex / sectors;
+                        //texture coordinate section 
+                        float textureU = (float)sectorIndex / sectors;
 
                         float textureV = 1.0f - (float)i / stacks;
 
