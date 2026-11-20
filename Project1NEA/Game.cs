@@ -187,14 +187,14 @@ namespace Project1NEA
 
         float[] semiMajorAxes =
             {
-            3.0f,   //Mercury
-            5.0f,   //Venus
-            7.0f,   //Earth
-            9.0f,  //Mars
-            14.0f,  //Jupiter
-            20.0f,  //Saturn
-            27.0f,  //Uranus
-            34.0f   //Neptune
+            120.0f,   //Mercury
+            200.0f,   //Venus
+            280.0f,   //Earth
+            360.0f,  //Mars
+            510.0f,  //Jupiter
+            800.0f,  //Saturn
+            1080.0f,  //Uranus
+            1360.0f   //Neptune
             };
         
         float[] eccentricities =
@@ -211,15 +211,17 @@ namespace Project1NEA
 
         float[] planetScales =
             {
-            0.24f, //Mercury
-            0.54f, //Venus
-            0.6f, //Earth
-            0.3f, //Mars
-            2.1f, //Jupiter
-            1.8f, //Saturn
-            1.08f, //Uranus
-            1.02f  //Neptune
+            0.383f, //Mercury
+            0.949f, //Venus
+            1.0f, //Earth
+            0.532f, //Mars
+            11.21f, //Jupiter
+            9.45f, //Saturn
+            4.01f, //Uranus
+            3.88f  //Neptune
         };
+
+        private const float earthScale = 3f;
 
         float[] orbitalPeriods =
             {
@@ -249,15 +251,23 @@ namespace Project1NEA
 
         float[] rotationSpeeds =
             {
+            0.017f,
+            -0.0041f,
             1.0f,
-            -0.2f,
-            1.0f,
-            0.97f,
-            2.4f,
-            2.2f,
-            -1.4f,
-            1.5f
+            0.972f,
+            2.41f,
+            2.245f,
+            -1.388f,
+            1.485f
         };
+        //mercury 0.017
+        //venus -0.004
+        //1
+        //mars 0.97
+        //ju[iter 2.4
+        //saturn is 2.3
+        //uranus -1.4
+        //ne[tune 1.5
 
         #endregion
         public Game(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title })
@@ -298,7 +308,7 @@ namespace Project1NEA
             }
             
 
-            // always get back without losing the simulation.
+            //always get back without losing the simulation.
             if (KeyboardState.IsKeyPressed(Keys.Escape))
             {
                 gameState = GameState.MainMenu;
@@ -318,26 +328,26 @@ namespace Project1NEA
 
                 if (input.IsKeyDown(Keys.W))
                 {
-                    position += cameraFront * movementSpeed * (float)args.Time; //forward 
+                    position += cameraFront * movementSpeed * 20 * (float)args.Time; //forward 
                 }
 
                 if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.W))
                 {
-                    position += cameraFront * movementSpeed * 10 * (float)args.Time; //Speed forward 
+                    position += cameraFront * movementSpeed * 100 * (float)args.Time; //Speed forward 
                 }
 
 
                 if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.S))
                 {
-                    position -= cameraFront * movementSpeed * 10 * (float)args.Time; //Speed Backwards 
+                    position -= cameraFront * movementSpeed * 100 * (float)args.Time; //Speed Backwards 
                 } if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.W))
                 {
-                    position += cameraFront * movementSpeed * 10 * (float)args.Time; //Speed forward 
+                    position += cameraFront * movementSpeed * 100 * (float)args.Time; //Speed forward 
                 }
 
                 if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.S))
                 {
-                    position -= cameraFront * movementSpeed * 10 * (float)args.Time; //Speed Backwards 
+                    position -= cameraFront * movementSpeed * 100 * (float)args.Time; //Speed Backwards 
                 }
 
                 if (input.IsKeyPressed(Keys.RightShift))
@@ -347,25 +357,25 @@ namespace Project1NEA
                 }
                 if (input.IsKeyDown(Keys.S))
                 {
-                    position -= cameraFront * movementSpeed * (float)args.Time; //backwards
+                    position -= cameraFront * movementSpeed * 20 * (float)args.Time; //backwards
                 }
 
                 if (input.IsKeyDown(Keys.A))
                 {
-                    position -= Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * (float)args.Time; //left
+                    position -= Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * 20 * (float)args.Time; //left
                 }
                 if (input.IsKeyDown(Keys.A) && input.IsKeyDown(Keys.LeftControl))
                 {
-                    position -= Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * 10 * (float)args.Time; // Speed left
+                    position -= Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * 100 * (float)args.Time; // Speed left
                 }
 
                 if (input.IsKeyDown(Keys.D))
                 {
-                    position += Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * (float)args.Time; //right
+                    position += Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * 20 * movementSpeed * (float)args.Time; //right
                 }
                 if (input.IsKeyDown(Keys.D) && input.IsKeyDown(Keys.LeftControl))
                 {
-                    position += Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * 10 * (float)args.Time; //Speed right
+                    position += Vector3.Normalize(Vector3.Cross(cameraFront, worldUp)) * movementSpeed * 100 * (float)args.Time; //Speed right
                 }
 
                 if (input.IsKeyDown(Keys.Space))
@@ -488,7 +498,7 @@ namespace Project1NEA
                 shader.SetInt("texture1", 0); //TextureUnit.Texture0
                 
             
-            //fun fact: garden snails have more than 10000 teeth
+            //fun fact: garden snails have more than 10000 teeth, credit to maxwell
             
             texture = new Texture("Textures/sunTex.png");
             texture2 = new Texture("Textures/starfinale.png");
@@ -550,7 +560,7 @@ namespace Project1NEA
 
                 //view and projection 
                 Matrix4 view = Matrix4.LookAt(position, position + cameraFront, worldUp);
-                Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Size.X / (float)Size.Y, 0.1f, 100.0f);
+                Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60.0f), Size.X / (float)Size.Y, 0.1f, 10000.0f);
 
                 shader.SetMatrix4("view", view);
                 shader.SetMatrix4("projection", projection);
@@ -562,16 +572,16 @@ namespace Project1NEA
 
 
 
-                // stars
+                //stars
                 texture2.Use(TextureUnit.Texture0);
-                Matrix4 Stars = Matrix4.CreateScale(200f);
+                Matrix4 Stars = Matrix4.CreateScale(10000f);
                 shader.SetMatrix4("model", Stars);
                 GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
 
 
-                // the SUN
+                //the SUN
                 texture.Use(TextureUnit.Texture0);
-                Matrix4 sunModel = Matrix4.CreateScale(3f);
+                Matrix4 sunModel = Matrix4.CreateScale(120f);
                 shader.SetMatrix4("model", sunModel);
                 GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
                 shader.SetInt("unlit", 0);
@@ -613,7 +623,7 @@ namespace Project1NEA
 
 
                     float time = SimulationTime;
-                    float scale = planetScales[planetIndex];
+                    float scale = planetScales[planetIndex] * earthScale;
 
                     
 
@@ -688,10 +698,7 @@ namespace Project1NEA
             #endregion
             #region Simulation helpers
 
-            /// <summary>
-            /// Elapsed simulation time. The offset keeps the planets away from
-            /// their shared starting line, so they are not all in a row.
-            /// </summary>
+
             private float SimulationTime
             {
                 get { return (float)_timer.Elapsed.TotalSeconds + 300; }
@@ -731,16 +738,12 @@ namespace Project1NEA
 
 
 
-            /// <summary>
-            /// Called when the user chooses Start. Places the camera beside
-            /// Earth looking at it, captures the pointer, and resets the mouse
-            /// baseline so the view does not jump on the first movement.
-            /// </summary>
             private void EnterSimulation()
             {
-                Vector3 earthPosition = GetPlanetPosition(EarthIndex, SimulationTime);
+            CursorState = CursorState.Grabbed;
 
-                // Stand off far enough that Earth is fully in view.
+            Vector3 earthPosition = GetPlanetPosition(EarthIndex, SimulationTime);
+
                 Vector3 offset = new Vector3(0.0f, 0.5f, 2.5f);
                 position = earthPosition + offset;
 
@@ -760,11 +763,10 @@ namespace Project1NEA
 
                 for (int i = 0; i <= stacks; i++)
                 {
-                    // i == 0 is the north pole, i == stacks is the south pole.
+                    //i == 0 is the north pole, i == stacks is the south pole.
                     float stackAngle = MathF.PI / 2 - i * MathF.PI / stacks;
 
-                    // The poles sit on the Y axis so that they line up with the
-                    // world's up vector and with the CreateRotationY axial spin.
+                    //world's up vector and with the CreateRotationY axial spin.
                     float yPosition = radius * MathF.Sin(stackAngle);
                     float ringRadius = radius * MathF.Cos(stackAngle);
 
