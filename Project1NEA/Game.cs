@@ -10,6 +10,7 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Transactions;
 using static Project1NEA.Shaders;
 using static System.Net.Mime.MediaTypeNames;
 namespace Project1NEA
@@ -19,7 +20,7 @@ namespace Project1NEA
 
     #region variables
     private Shader shader;
-            private float simulationTime = 300f;
+            private double simulationTime = 300f;
              private int VertexBufferObject;
             private int VertexArrayObject;
             private int ElementBufferObject;
@@ -44,7 +45,7 @@ namespace Project1NEA
             private Texture texture7;
             private Texture texture8;
             private Texture texture9;
-            private Texture texture10;
+        private Texture texture10;
 
             private bool isCTRLdown = false;
     
@@ -55,7 +56,7 @@ namespace Project1NEA
             private Vector3 cameraUp;
             private Vector3 cameraFront = new Vector3(0.0f, 0.0f, -1.0f);
 
-            Vector3 position = new Vector3(0.0f, 0.0f, 3.0f);
+            Vector3d position = new Vector3d(0.0f, 0.0f, 3.0f);
             Vector3 worldUp = new Vector3(0.0f, 1.0f, 0.0f);
 
             private Vector2 _lastPos;
@@ -187,14 +188,14 @@ namespace Project1NEA
 
         float[] semiMajorAxes =
             {
-            120.0f,   //Mercury
-            200.0f,   //Venus
-            280.0f,   //Earth
-            360.0f,  //Mars
-            510.0f,  //Jupiter
-            800.0f,  //Saturn
-            1080.0f,  //Uranus
-            1360.0f   //Neptune
+            0.387f,   //Mercury
+            0.723f,   //Venus
+            1.000f,   //Earth
+            1.524f,  //Mars
+            5.203f,  //Jupiter
+            9.537f,  //Saturn
+            19.191f,  //Uranus
+            30.069f   //Neptune
             };
         
         float[] eccentricities =
@@ -221,7 +222,17 @@ namespace Project1NEA
             3.88f  //Neptune
         };
 
-        private const float earthScale = 3f;
+        private const float earthScale = 100;
+        private const double AuInUnits = 11740.5 * earthScale;
+        private const double theRelativeDistanceScale = 1.0;
+        private const double sunDiameter = 109.2;
+        private const double orbitSecondsPerYear = 900.0;
+
+        private readonly Vector3d[] bodyPosition = new Vector3d[9];
+        private readonly Vector3d[] previousBodyPos = new Vector3d[9];
+        private readonly double[] bodyRadius = new double[9];
+
+        private Texture[] bodyTex;
 
         float[] orbitalPeriods =
             {
@@ -308,7 +319,7 @@ namespace Project1NEA
             }
             
 
-            //always get back without losing the simulation.
+            //always get back without losing the sim.
             if (KeyboardState.IsKeyPressed(Keys.Escape))
             {
                 gameState = GameState.MainMenu;
@@ -387,6 +398,17 @@ namespace Project1NEA
                 {
                     position -= worldUp * movementSpeed * (float)args.Time; //down
                 }
+                if (input.IsKeyPressed(Keys.RightShift))
+                {
+                    TeleportTo(EarthIndex + 1);
+                }
+                for (int k = 0; k <= 8; k++)
+                {
+                    if (input.IsKeyPressed((Keys)((int)Keys.D0 + k)))
+                    {
+                        TeleportTo(k);
+                    }
+                }
 
                 if (KeyboardState.IsKeyDown(Keys.P))
                 {
@@ -405,6 +427,27 @@ namespace Project1NEA
                 // the first one (0.0f) means if it is true, then it will set the multiplier to zero, the (1.0) is vice versa
 
                 simulationTime += (float)args.Time * theTimeMultiplier;
+                
+
+                int nearest;
+                double surface = nearestSurfaceD(position, out nearest);
+                bool closeToBody = surface < bodyRadius[nearest] * 6 + 100;
+                int followIndex = nearest;
+
+                UpdateBodyPositions();
+                if(closeToBody)
+                {
+                    position += bodyPosition[followIndex] - previousBodyPos[followIndex];
+                }
+
+                Vector3d fromCentre = position - bodyPosition[nearest];
+                double minimumDist = bodyRadius[nearest] + 1.0;
+                if (fromCentre.Length < minimumDist)
+                {
+                    position = bodyPosition[nearest] + Vector3d.Normalize(fromCentre) * minimumDist;
+                }
+
+                movementSpeed = (float)Math.Max(0.25, nearestSurfaceD(position, out nearest) * 0.05);
 
                 bool speedKey = false;
                 
@@ -511,6 +554,10 @@ namespace Project1NEA
             texture9 = new Texture("Textures/Uranus.png");
             texture10 = new Texture("Textures/Neptune.png");
 
+            bodyTex = new Texture[] { texture, texture3, texture4, texture5, texture6, texture7, texture8, texture9, texture10 };
+
+            initBodies();
+
             cameraPos = new Vector3(0.0f, 0.0f, 3.0f);
             cameraTarget = Vector3.Zero;
             cameraDirection = Vector3.Normalize(cameraPos - cameraTarget);
@@ -559,14 +606,17 @@ namespace Project1NEA
                 shader.Use();
 
                 //view and projection 
-                Matrix4 view = Matrix4.LookAt(position, position + cameraFront, worldUp);
-                Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60.0f), Size.X / (float)Size.Y, 0.1f, 10000.0f);
+                Matrix4 view = Matrix4.LookAt(Vector3.Zero, cameraFront, worldUp);
+                float aspect = Size.X / (float)Size.Y;
+                float fov = MathHelper.DegreesToRadians(60.0f);
 
                 shader.SetMatrix4("view", view);
-                shader.SetMatrix4("projection", projection);
                 shader.SetVector3("lightPos", Vector3.Zero);
                 shader.SetVector3("lightColor", new Vector3(1f, 1f, 1f));
                 shader.SetInt("unlit", 1);
+
+                Vector3d sunRel = bodyPosition[0] - position;
+                shader.SetVector3("lightPos", new Vector3((float)sunRel.X, (float)sunRel.Y, (float)sunRel.Z));
 
                 GL.BindVertexArray(_vao);
 
@@ -631,22 +681,56 @@ namespace Project1NEA
 
 
 
-                    Vector3 orbitPosition = GetPlanetPosition(planetIndex, simulationTime);
+                    Vector3d orbitPosition = GetPlanetPosition(planetIndex, simulationTime);
 
 
                     //modl matrix
 
-                    Matrix4 scaleMatrix = Matrix4.CreateScale(scale);
 
-                    Matrix4 rotation = Matrix4.CreateRotationY(simulationTime * rotationSpeeds[planetIndex]);
-
-                    Matrix4 translation = Matrix4.CreateTranslation(orbitPosition);
-
-                    Matrix4 model = scaleMatrix * rotation * translation;
-
-                    shader.SetMatrix4("model", model);
+                    
 
                     GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+
+                    int[] order = Enumerable.Range(0, 9) .OrderByDescending(i => (bodyPosition[i] - position).Length - bodyRadius[i]) .ToArray();
+                    foreach (int planet in order)
+                    {
+                        Vector3d relative = bodyPosition[planet] - position;
+                        double distance = relative.Length;
+                        double radius = bodyRadius[planet];
+
+                        float near = (float)Math.Max(0.05, (distance - radius) * 0.5);
+                        float far = (float)((distance + radius) * 1.5 + 1.0);
+
+                        GL.Clear(ClearBufferMask.DepthBufferBit);
+                        shader.SetMatrix4("projection", Matrix4.CreatePerspectiveFieldOfView(fov, aspect, near, far));
+                        shader.SetInt("unlit", 1);
+                        texture2.Use(TextureUnit.Texture0);
+                        shader.SetMatrix4("model", Matrix4.CreateScale(10000f));
+                        GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+
+                        bodyTex[planet].Use(TextureUnit.Texture0);
+
+                        Matrix4 model;
+                        Matrix4 scaleMatrix = Matrix4.CreateScale((float)(radius * 2.0));
+                        Matrix4 translation = Matrix4.CreateTranslation((float)relative.X, (float)relative.Y, (float)relative.Z);
+
+                        if (planet == 0)
+                        {
+                            
+                            model = scaleMatrix * translation;
+                        }
+                        else
+                        {
+                            shader.SetInt("unlit", 0);
+                            float spin = (float)((simulationTime * rotationSpeeds[planet - 1]) % (2.0 * Math.PI));
+                            model = scaleMatrix * Matrix4.CreateRotationY(spin) * translation;
+                        }
+
+                        shader.SetMatrix4("model", model);
+                        GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+                    }
+
+                    Context.SwapBuffers();
                 }
 
                 Context.SwapBuffers();
@@ -687,7 +771,7 @@ namespace Project1NEA
                 GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
                 GL.BindVertexArray(0);
                 GL.UseProgram(0);
-                // Delete all the resources.
+                //delete all the resources.
                 GL.DeleteBuffer(VertexBufferObject);
                 GL.DeleteVertexArray(VertexArrayObject);
 
@@ -705,24 +789,24 @@ namespace Project1NEA
 
             }
 
-                private Vector3 GetPlanetPosition(int planetIndex, float simulationTime)
+                private Vector3d GetPlanetPosition(int planetIndex, double simulationTime)
                 {
-                    float semiMajorAxis = semiMajorAxes[planetIndex];
-                    float eccentricity = eccentricities[planetIndex];
+                    double semiMajorAxis = semiMajorAxes[planetIndex];
+                    double eccentricity = eccentricities[planetIndex];
 
                 //the inner planets move faster therefore the period scales the whole orbit.
-                    float orbitalPeriod = orbitalPeriods[planetIndex] * 15.0f;
+                    double orbitalPeriod = orbitalPeriods[planetIndex] * 15.0f;
 
-                    float meanMotion = MathF.PI * 2.0f / orbitalPeriod;
-                    float meanAnomaly= meanMotion * simulationTime;
-                    float eccentricAnomaly =meanAnomaly;
-            float currentEccen = eccentricAnomaly;
+                    double meanMotion = MathF.PI * 2.0f / orbitalPeriod;
+                    double meanAnomaly= meanMotion * simulationTime;
+                    double eccentricAnomaly =meanAnomaly;
+            double currentEccen = eccentricAnomaly;
                     for(int i = 0; i < 5; i++)
                     {
-                        eccentricAnomaly = eccentricAnomaly - (eccentricAnomaly - eccentricity * MathF.Sin(eccentricAnomaly) - meanAnomaly) / (1.0f - eccentricity * MathF.Cos(eccentricAnomaly));
+                       eccentricAnomaly = eccentricAnomaly - (eccentricAnomaly - eccentricity * MathF.Sin((float)eccentricAnomaly) - meanAnomaly) / (1.0f - eccentricity * MathF.Cos((float)eccentricAnomaly));
                     }
-                    float x = semiMajorAxis * (MathF.Cos(eccentricAnomaly) - eccentricity);
-                    float z = semiMajorAxis * MathF.Sqrt(1.0f - eccentricity * eccentricity) * MathF.Sin(eccentricAnomaly);
+                    double x = semiMajorAxis * (MathF.Cos((float)eccentricAnomaly) - eccentricity);
+                    double z = semiMajorAxis * MathF.Sqrt((1.0f - (float)eccentricity *(float)eccentricity) * MathF.Sin((float)eccentricAnomaly));
 
                     float inclination = MathHelper.DegreesToRadians(inclinations[planetIndex]);
 
@@ -730,30 +814,69 @@ namespace Project1NEA
 
 
                 //tilt orbit plane
-                return new Vector3(x, z * MathF.Sin(inclination), z * MathF.Cos(inclination));
+                return new Vector3((float)x, (float)z * MathF.Sin(inclination), (float)z * MathF.Cos(inclination));
                 }
-                
-        
+
+        private void initBodies()
+        {
+            bodyRadius[0] = sunDiameter * earthScale / 2.0;
+            for (int i = 0; i < 8; i++)
+            {
+                bodyRadius[i + 1] = planetScales[i] * earthScale / 2.0;
+            }
+            UpdateBodyPositions();
+            Array.Copy(bodyPosition, previousBodyPos, bodyPosition.Length);
+        }
+
+        private void UpdateBodyPositions()
+        {
+            Array.Copy(bodyPosition, previousBodyPos, bodyPosition.Length);
+            bodyPosition[0] = Vector3d.Zero;
+            for (int i = 0; i < 8; i++)
+            {
+                bodyPosition[i + 1] = GetPlanetPosition(i, simulationTime);
+            }
+        }
+
+        private double nearestSurfaceD(Vector3d p, out int index)
+        {
+            double best = double.MaxValue;
+            index = 0;
+            for (int i = 0; i < bodyPosition.Length; i++)
+            {
+                double d = (bodyPosition[i] - p).Length - bodyRadius[i];
+                if (d < best)
+                {
+                    best = d;
+                    index = i;
+                }
+            }
+            return best;
+        }
+
+        private void TeleportTo(int body)
+        {
+            UpdateBodyPositions();
+            double radius = bodyRadius[body];
+            Vector3d centre = bodyPosition[body];
+            Vector3d towardsSun = centre.LengthSquared > 1e-9 ? Vector3d.Normalize(-centre) : new Vector3d(0.0, 0.0, 1.0);
+            position = centre + Vector3d.Normalize(towardsSun + new Vector3d(0.0, 0.25, 0.0)) * radius * 3.0;
+
+            Vector3d toBody = Vector3d.Normalize(centre - position);
+            cameraFront = new Vector3((float)toBody.X, (float)toBody.Y, (float)toBody.Z);
+            pitch = (float)MathHelper.RadiansToDegrees(Math.Asin(toBody.Y));
+            yaw = (float)MathHelper.RadiansToDegrees(Math.Atan2(toBody.Z, toBody.X));
+            firstMove = true;
+        }
 
 
 
 
-            private void EnterSimulation()
+
+        private void EnterSimulation()
             {
             CursorState = CursorState.Grabbed;
-
-            Vector3 earthPosition = GetPlanetPosition(EarthIndex, SimulationTime);
-
-                Vector3 offset = new Vector3(0.0f, 0.5f, 2.5f);
-                position = earthPosition + offset;
-
-                Vector3 towardsEarth = Vector3.Normalize(earthPosition - position);
-                cameraFront = towardsEarth;
-
-                pitch = MathHelper.RadiansToDegrees(MathF.Asin(towardsEarth.Y));
-                yaw = MathHelper.RadiansToDegrees(MathF.Atan2(towardsEarth.Z, towardsEarth.X));
-
-                firstMove = true;
+            TeleportTo(EarthIndex + 1);
             }
         #endregion
         #region CreateSphere
@@ -807,10 +930,10 @@ namespace Project1NEA
                     
                     float textureU = (float)sectorIndex / sectors;
 
-                        float textureV = 1.0f - (float)i / stacks;
+                    float textureV = 1.0f - (float)i / stacks;
 
-                        vertices.Add(textureU);
-                        vertices.Add(textureV);
+                    vertices.Add(textureU);
+                    vertices.Add(textureV);
                     }
                 }
 
